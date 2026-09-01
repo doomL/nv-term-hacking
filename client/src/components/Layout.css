@@ -1,0 +1,14 @@
+.app-layout {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: #020a06;
+}
+
+.content-layer {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,133 @@
+.crt-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #020a06;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+.crt-fullscreen .crt-terminal {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.crt-touch-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.crt-touch-layer > * {
+  pointer-events: auto;
+}
+
+.crt-touch-dpad {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0.92;
+}
+
+.crt-touch-dpad-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.crt-touch-btn {
+  min-height: 48px;
+  min-width: 56px;
+  padding: 0 12px;
+  background: rgba(3, 16, 10, 0.82);
+  border: 2px solid #4f9a76;
+  border-radius: 8px;
+  color: #8df0b4;
+  font-family: ui-monospace, monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.crt-touch-btn:active {
+  background: rgba(28, 236, 132, 0.25);
+  border-color: #8df0b4;
+}
+
+.crt-touch-btn.ok {
+  color: #ffba5e;
+  border-color: #ffba5e;
+  min-width: 64px;
+}
+
+.crt-touch-btn:disabled {
+  opacity: 0.35;
+}
+
+.crt-touch-back {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  min-height: 44px;
+  padding: 0 14px;
+  background: rgba(3, 16, 10, 0.88);
+  border: 2px solid #4f9a76;
+  border-radius: 8px;
+  color: #8df0b4;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.crt-touch-back:active {
+  background: rgba(28, 236, 132, 0.25);
+  border-color: #8df0b4;
+}
+
+/* In partita: basso a sinistra, allineato al d-pad — fuori dai messaggi footer */
+.crt-touch-back--game {
+  top: auto;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(8px, env(safe-area-inset-left));
+}
+
+@media (max-width: 480px) {
+  .crt-touch-back--game {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    font-size: 0.78rem;
+    min-height: 40px;
+    padding: 0 10px;
+  }
+}
+
+@media (pointer: fine) and (min-width: 901px) {
+  .crt-touch-back,
+  .crt-touch-dpad {
+    display: none;
+  }
+}
+
+@media (pointer: coarse), (max-width: 900px) {
+  .crt-touch-back {
+    display: block;
+  }
+
+  .crt-touch-dpad {
+    display: flex;
+  }
+}

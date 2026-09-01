@@ -1,0 +1,131 @@
+.terminal-game {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(100dvh - 56px);
+  padding: 0.5rem;
+  outline: none;
+}
+
+.terminal-crt-frame {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 4 / 3;
+  max-height: min(72dvh, 720px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 2px #2a5a40,
+    0 0 40px rgba(28, 236, 132, 0.15),
+    inset 0 0 80px rgba(0, 0, 0, 0.5);
+}
+
+.game-crt-terminal {
+  width: 100%;
+  height: 100%;
+}
+
+.terminal-controls {
+  display: none;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.terminal-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.terminal-dpad-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.terminal-control-btn.dpad-up,
+.terminal-control-btn.dpad-down {
+  width: 52px;
+  min-width: 52px;
+  flex: none;
+  padding: 0;
+}
+
+.terminal-control-btn {
+  flex: 1;
+  min-height: 52px;
+  min-width: 72px;
+  background: rgba(3, 16, 10, 0.95);
+  border: 2px solid #4f9a76;
+  border-radius: 8px;
+  color: #8df0b4;
+  font-family: ui-monospace, monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.terminal-control-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.terminal-control-btn:not(:disabled):active {
+  background: rgba(28, 236, 132, 0.2);
+  border-color: #8df0b4;
+}
+
+.terminal-control-ok {
+  flex: 1.2;
+  color: #ffba5e;
+  border-color: #ffba5e;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+
+.terminal-exit-btn {
+  margin-top: 0.75rem;
+  background: transparent;
+  border: 1px solid #4f9a76;
+  color: #4f9a76;
+  padding: 0.5rem 1.25rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.terminal-exit-btn:hover {
+  color: #8df0b4;
+  border-color: #8df0b4;
+}
+
+/* Mobile / touch: show arrow controls */
+@media (max-width: 900px), (pointer: coarse) {
+  .terminal-controls {
+    display: flex;
+  }
+
+  .terminal-crt-frame {
+    max-height: min(58dvh, 520px);
+  }
+}
+
+@media (max-width: 480px) {
+  .terminal-game {
+    padding: 0.25rem;
+    min-height: calc(100dvh - 120px);
+  }
+
+  .terminal-crt-frame {
+    border-radius: 8px;
+    max-height: 52dvh;
+  }
+}

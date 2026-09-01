@@ -1,0 +1,87 @@
+.leaderboard-page {
+  flex: 1;
+  padding: 1.5rem 1rem 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.leaderboard-page h1,
+.leaderboard-page h2 {
+  color: #8df0b4;
+  font-family: ui-monospace, monospace;
+  text-align: center;
+}
+
+.leaderboard-page h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.leaderboard-page h2 {
+  font-size: 1.1rem;
+  margin: 2rem 0 1rem;
+}
+
+.lb-filter {
+  display: block;
+  margin: 0 auto 1.5rem;
+  background: rgba(3, 16, 10, 0.9);
+  border: 1px solid #4f9a76;
+  color: #8df0b4;
+  padding: 0.5rem 1rem;
+  font-family: ui-monospace, monospace;
+  min-height: 44px;
+}
+
+.lb-loading,
+.lb-empty {
+  text-align: center;
+  color: #4f9a76;
+  font-family: ui-monospace, monospace;
+}
+
+.lb-table-wrap {
+  overflow-x: auto;
+}
+
+.lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+}
+
+.lb-table th,
+.lb-table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #2a5a40;
+  color: #4f9a76;
+}
+
+.lb-table th {
+  color: #8df0b4;
+  font-weight: 600;
+}
+
+.lb-table td.score {
+  color: #ffba5e;
+  font-weight: 700;
+}
+
+.lb-table tr:hover td {
+  background: rgba(28, 236, 132, 0.05);
+}
+
+@media (max-width: 480px) {
+  .lb-table {
+    font-size: 0.75rem;
+  }
+
+  .lb-table th,
+  .lb-table td {
+    padding: 0.5rem;
+  }
+}

@@ -1,0 +1,58 @@
+.play-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.game-result {
+  max-width: 400px;
+  margin: 3rem auto;
+  text-align: center;
+  background: rgba(3, 16, 10, 0.9);
+  border: 2px solid #4f9a76;
+  border-radius: 8px;
+  padding: 2rem;
+  font-family: ui-monospace, monospace;
+}
+
+.game-result h2 {
+  color: #8df0b4;
+  margin: 0 0 1rem;
+}
+
+.game-result p {
+  color: #4f9a76;
+  margin: 0.5rem 0;
+}
+
+.game-result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.game-result-actions button {
+  background: transparent;
+  border: 1px solid #8df0b4;
+  color: #8df0b4;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.game-result-actions button:hover {
+  background: rgba(28, 236, 132, 0.15);
+}
+
+.game-result-actions button.secondary {
+  border-color: #4f9a76;
+  color: #4f9a76;
+}
+
+.saved-msg {
+  color: #ffba5e !important;
+}

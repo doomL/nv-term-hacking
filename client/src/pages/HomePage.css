@@ -1,0 +1,75 @@
+.home-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.home-header h1 {
+  color: #8df0b4;
+  font-family: ui-monospace, monospace;
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  text-shadow: 0 0 20px rgba(28, 236, 132, 0.5);
+  margin: 0 0 0.5rem;
+}
+
+.home-header p {
+  color: #4f9a76;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 900px;
+}
+
+.home-card {
+  background: rgba(3, 16, 10, 0.85);
+  border: 1px solid #4f9a76;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-card:hover {
+  border-color: #8df0b4;
+  box-shadow: 0 0 24px rgba(28, 236, 132, 0.2);
+  transform: translateY(-2px);
+}
+
+.home-card-icon {
+  color: #ffba5e;
+  font-family: ui-monospace, monospace;
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.home-card h2 {
+  color: #8df0b4;
+  font-family: ui-monospace, monospace;
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.home-card p {
+  color: #4f9a76;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  margin: 0;
+}

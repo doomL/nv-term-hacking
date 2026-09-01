@@ -1,0 +1,86 @@
+.auth-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-form {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(3, 16, 10, 0.9);
+  border: 2px solid #4f9a76;
+  border-radius: 8px;
+  padding: 2rem;
+  font-family: ui-monospace, monospace;
+}
+
+.auth-form h1 {
+  color: #8df0b4;
+  text-align: center;
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+}
+
+.auth-form label {
+  display: block;
+  color: #4f9a76;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.auth-form input {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  background: rgba(3, 16, 10, 0.9);
+  border: 1px solid #4f9a76;
+  color: #8df0b4;
+  padding: 0.65rem;
+  font-family: inherit;
+  font-size: 1rem;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: #8df0b4;
+  box-shadow: 0 0 8px rgba(28, 236, 132, 0.3);
+}
+
+.auth-form button[type='submit'] {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #8df0b4;
+  color: #8df0b4;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  min-height: 44px;
+  margin-top: 0.5rem;
+}
+
+.auth-form button[type='submit']:hover {
+  background: rgba(28, 236, 132, 0.15);
+}
+
+.auth-error {
+  color: #ff6b6b;
+  text-align: center;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.auth-switch {
+  text-align: center;
+  color: #4f9a76;
+  font-size: 0.85rem;
+  margin: 1.25rem 0 0;
+}
+
+.auth-switch a {
+  color: #8df0b4;
+}
