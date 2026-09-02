@@ -68,10 +68,82 @@ function getClientGameState(room: Room, odId: string) {
   };
 }
 
+/** First room still waiting for a second player — used for quick match instead of a room code. */
+function findOpenRoom(): Room | undefined {
+  for (const room of rooms.values()) {
+    if (room.status === 'waiting' && room.players.size === 1) return room;
+  }
+  return undefined;
+}
+
+function getLobbyStats(io: Server) {
+  return {
+    onlinePlayers: io.of('/').sockets.size,
+    openRooms: Array.from(rooms.values()).filter((r) => r.status === 'waiting' && r.players.size === 1)
+      .length,
+  };
+}
+
+function broadcastLobbyStats(io: Server) {
+  io.emit('lobby:stats', getLobbyStats(io));
+}
+
 export function setupSocketHandlers(io: Server) {
   io.on('connection', (socket: Socket) => {
     let currentRoom: string | null = null;
     let odId = socket.id;
+
+    socket.emit('lobby:stats', getLobbyStats(io));
+    broadcastLobbyStats(io);
+
+    socket.on('lobby:stats', () => {
+      socket.emit('lobby:stats', getLobbyStats(io));
+    });
+
+    socket.on('room:quickmatch', ({ username, difficulty, language, userId }: { username: string; difficulty: Difficulty; language?: 'en' | 'it'; userId?: number }) => {
+      const open = findOpenRoom();
+      if (open) {
+        open.players.set(socket.id, {
+          odId: socket.id,
+          odUserId: userId,
+          username,
+          ready: false,
+          finished: false,
+          score: 0,
+          status: 'playing',
+        });
+        currentRoom = open.id;
+        socket.join(open.id);
+        io.to(open.id).emit('room:updated', { room: getPublicRoom(open) });
+        socket.emit('room:joined', { room: getPublicRoom(open), gameState: null, isHost: false });
+        broadcastLobbyStats(io);
+        return;
+      }
+
+      const code = generateRoomCode();
+      const room: Room = {
+        id: code,
+        hostId: socket.id,
+        difficulty,
+        language: language === 'it' ? 'it' : 'en',
+        players: new Map(),
+        status: 'waiting',
+      };
+      room.players.set(socket.id, {
+        odId: socket.id,
+        odUserId: userId,
+        username,
+        ready: false,
+        finished: false,
+        score: 0,
+        status: 'playing',
+      });
+      rooms.set(code, room);
+      currentRoom = code;
+      socket.join(code);
+      socket.emit('room:joined', { room: getPublicRoom(room), gameState: null, isHost: true });
+      broadcastLobbyStats(io);
+    });
 
     socket.on('room:create', ({ username, difficulty, language, userId }: { username: string; difficulty: Difficulty; language?: 'en' | 'it'; userId?: number }) => {
       const code = generateRoomCode();
@@ -96,6 +168,7 @@ export function setupSocketHandlers(io: Server) {
       currentRoom = code;
       socket.join(code);
       socket.emit('room:joined', { room: getPublicRoom(room), gameState: null, isHost: true });
+      broadcastLobbyStats(io);
     });
 
     socket.on('room:join', ({ code, username, userId }: { code: string; username: string; userId?: number }) => {
@@ -125,6 +198,7 @@ export function setupSocketHandlers(io: Server) {
       socket.join(code.toUpperCase());
       io.to(code.toUpperCase()).emit('room:updated', { room: getPublicRoom(room) });
       socket.emit('room:joined', { room: getPublicRoom(room), gameState: null, isHost: false });
+      broadcastLobbyStats(io);
     });
 
     socket.on('room:ready', () => {
@@ -214,7 +288,12 @@ export function setupSocketHandlers(io: Server) {
     });
 
     socket.on('disconnect', () => {
-      handleDisconnect(socket, currentRoom);
+      if (currentRoom) {
+        handleDisconnect(socket, currentRoom);
+      } else {
+        // Not in a room yet — still an online-player count change nobody else heard about.
+        setImmediate(() => broadcastLobbyStats(io));
+      }
     });
   });
 }
@@ -236,13 +315,15 @@ function handleDisconnect(socket: Socket, roomId: string | null) {
   room.players.delete(socket.id);
   socket.leave(roomId);
 
+  const io = socket.nsp.server;
   if (room.players.size === 0) {
     rooms.delete(roomId);
+    broadcastLobbyStats(io);
     return;
   }
 
   if (room.status === 'waiting') {
-    const io = socket.nsp.server;
     io.to(roomId).emit('room:updated', { room: getPublicRoom(room) });
   }
+  broadcastLobbyStats(io);
 }

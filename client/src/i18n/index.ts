@@ -84,7 +84,7 @@ const resources = {
       },
       multiplayer: {
         create: 'Create Room',
-        join: 'Join Room',
+        join: 'Quick Match',
         roomCode: 'Room Code',
         waiting: 'Waiting for opponent...',
         ready: 'Ready',
@@ -97,6 +97,8 @@ const resources = {
         opponentJoined: 'Opponent joined!',
         gameStarting: 'Game starting...',
         leave: 'Leave Room',
+        onlinePlayers: 'Online: {{count}}',
+        openRooms: 'Open rooms: {{count}}',
       },
       leaderboard: {
         title: 'Leaderboard',
@@ -192,7 +194,7 @@ const resources = {
       },
       multiplayer: {
         create: 'Crea Stanza',
-        join: 'Unisciti',
+        join: 'Partita Rapida',
         roomCode: 'Codice Stanza',
         waiting: 'In attesa dell\'avversario...',
         ready: 'Pronto',
@@ -205,6 +207,8 @@ const resources = {
         opponentJoined: 'Avversario connesso!',
         gameStarting: 'Partita in corso...',
         leave: 'Lascia Stanza',
+        onlinePlayers: 'Online: {{count}}',
+        openRooms: 'Stanze aperte: {{count}}',
       },
       leaderboard: {
         title: 'Classifica',

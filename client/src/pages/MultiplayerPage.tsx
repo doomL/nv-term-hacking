@@ -49,13 +49,12 @@ export function MultiplayerPage() {
   const [phase, setPhase] = useState<'lobby' | 'waiting' | 'playing' | 'finished'>('lobby');
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [gameState, setGameState] = useState<(GameState & { brackets: BracketPair[] }) | null>(null);
-  const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState('');
   const [mySocketId, setMySocketId] = useState('');
   const [message, setMessage] = useState('');
   const [saved, setSaved] = useState(false);
   const [menuIndex, setMenuIndex] = useState(0);
-  const [typingCode, setTypingCode] = useState(false);
+  const [lobbyStats, setLobbyStats] = useState({ onlinePlayers: 0, openRooms: 0 });
 
   const username = user?.username ?? guestName;
   const playSfxRef = useRef(playSfx);
@@ -93,6 +92,9 @@ export function MultiplayerPage() {
       if (password) setMessage(`Password: ${password}`);
       playSfxRef.current(r.winnerId === socket.id ? 'granted' : 'locked');
     });
+    socket.on('lobby:stats', (stats: { onlinePlayers: number; openRooms: number }) => {
+      setLobbyStats(stats);
+    });
     socket.on('error', ({ message: msg }) => setError(msg));
     return () => {
       void socket.disconnect();
@@ -104,14 +106,9 @@ export function MultiplayerPage() {
     socketRef.current?.emit('room:create', { username, difficulty, language, userId: user?.id });
   };
 
-  const joinRoom = () => {
+  const quickMatch = () => {
     setError('');
-    if (!joinCode.trim()) return;
-    socketRef.current?.emit('room:join', {
-      code: joinCode.trim().toUpperCase(),
-      username,
-      userId: user?.id,
-    });
+    socketRef.current?.emit('room:quickmatch', { username, difficulty, language, userId: user?.id });
   };
 
   const setReady = () => socketRef.current?.emit('room:ready');
@@ -121,7 +118,6 @@ export function MultiplayerPage() {
     setPhase('lobby');
     setRoom(null);
     setGameState(null);
-    setTypingCode(false);
     setMenuIndex(0);
   };
 
@@ -169,11 +165,12 @@ export function MultiplayerPage() {
     subtitle: t('home.multiplayerDesc'),
     items: lobbyItems,
     statusLines: [
-      ...(typingCode || menuIndex === 1 ? [`> ${t('multiplayer.roomCode')}: ${joinCode}${typingCode ? '_' : ''}`] : []),
+      t('multiplayer.onlinePlayers', { count: lobbyStats.onlinePlayers }),
+      t('multiplayer.openRooms', { count: lobbyStats.openRooms }),
       ...(error ? [`! ${error}`] : []),
     ],
     footerLines: [t('menu.navHint'), t('menu.enterHint'), t('menu.back')],
-  }), [menuIndex, lobbyItems, t, typingCode, joinCode, error]);
+  }), [menuIndex, lobbyItems, t, lobbyStats, error]);
 
   const getWaitingScreen = useCallback((): CrtScreenState => {
     if (!room) return getLobbyScreen();
@@ -208,13 +205,8 @@ export function MultiplayerPage() {
       playSfx('confirm');
       createRoom();
     } else if (id === 'join') {
-      if (typingCode && joinCode.trim()) {
-        playSfx('confirm');
-        joinRoom();
-      } else {
-        playSfx('confirm');
-        setTypingCode(true);
-      }
+      playSfx('confirm');
+      quickMatch();
     } else if (id === 'back') {
       playSfx('back');
       navigate('/');
@@ -229,13 +221,6 @@ export function MultiplayerPage() {
   useEffect(() => {
     if (phase !== 'lobby') return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (typingCode) {
-        if (e.key === 'Escape') { playSfx('back'); setTypingCode(false); return; }
-        if (e.key === 'Backspace') { setJoinCode((c) => c.slice(0, -1)); return; }
-        if (e.key === 'Enter') { unlock(); playSfx('confirm'); joinRoom(); return; }
-        if (/^[a-zA-Z0-9]$/.test(e.key)) setJoinCode((c) => (c + e.key).toUpperCase().slice(0, 6));
-        return;
-      }
       if (e.key === 'ArrowUp') { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.max(0, i - 1)); }
       if (e.key === 'ArrowDown') { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.min(lobbyItems.length - 1, i + 1)); }
       if (e.key === 'Enter') activateLobby();
@@ -244,7 +229,7 @@ export function MultiplayerPage() {
     window.addEventListener('keydown', onKeyDown);
     containerRef.current?.focus();
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [phase, typingCode, menuIndex, lobbyItems, joinCode, navigate]);
+  }, [phase, menuIndex, lobbyItems, navigate]);
 
   if (phase === 'lobby') {
     return (
@@ -261,13 +246,8 @@ export function MultiplayerPage() {
             mode="menu"
             backLabel={t('menu.backButton')}
             onBack={() => {
-              if (typingCode) {
-                playSfx('back');
-                setTypingCode(false);
-              } else {
-                playSfx('back');
-                navigate('/');
-              }
+              playSfx('back');
+              navigate('/');
             }}
             onUp={() => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.max(0, i - 1)); }}
             onDown={() => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.min(lobbyItems.length - 1, i + 1)); }}
