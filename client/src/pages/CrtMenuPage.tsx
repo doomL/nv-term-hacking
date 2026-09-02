@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtFullscreen } from '../components/CrtFullscreen';
 import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { useAudio } from '../context/AudioContext';
@@ -149,9 +150,28 @@ export function CrtMenuPage() {
     containerRef.current?.focus();
   }, []);
 
+  const { onTouchStart, onTouchEnd } = useSwipeNavigation({
+    onUp: () => {
+      unlock();
+      playSfx('navigate');
+      setSelectedIndex((i) => (i <= 0 ? items.length - 1 : i - 1));
+    },
+    onDown: () => {
+      unlock();
+      playSfx('navigate');
+      setSelectedIndex((i) => (i >= items.length - 1 ? 0 : i + 1));
+    },
+  });
+
   return (
     <CrtFullscreen>
-      <div className="crt-fullscreen" ref={containerRef} tabIndex={0}>
+      <div
+        className="crt-fullscreen"
+        ref={containerRef}
+        tabIndex={0}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
         <CrtTouchDpad
           mode="menu"

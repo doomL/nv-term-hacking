@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CrtFullscreen } from '../components/CrtFullscreen';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
 import type { CrtScreenState } from '../effects/crt/crtScreenTypes';
@@ -31,6 +32,23 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
   const fields = mode === 'login'
     ? ['username', 'password', 'submit']
     : ['username', 'email', 'password', 'submit'];
+
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
+  const activeFieldKey = fields[fieldIndex];
+  const isTextField = activeFieldKey === 'username' || activeFieldKey === 'email' || activeFieldKey === 'password';
+
+  const currentFieldValue = () => {
+    if (activeFieldKey === 'username') return username;
+    if (activeFieldKey === 'email') return email;
+    if (activeFieldKey === 'password') return password;
+    return '';
+  };
+
+  const setCurrentFieldValue = (value: string) => {
+    if (activeFieldKey === 'username') setUsername(value);
+    if (activeFieldKey === 'email') setEmail(value);
+    if (activeFieldKey === 'password') setPassword(value);
+  };
 
   const getScreenData = useCallback((): CrtScreenState => {
     const lines: TextLine[] = [
@@ -107,35 +125,81 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
         }
         return;
       }
-      if (fieldIndex === fields.length - 1) return;
-
-      if (e.key === 'Backspace') {
-        e.preventDefault();
-        const key = fields[fieldIndex];
-        if (key === 'username') setUsername((v) => v.slice(0, -1));
-        if (key === 'email') setEmail((v) => v.slice(0, -1));
-        if (key === 'password') setPassword((v) => v.slice(0, -1));
-        return;
-      }
-      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        const key = fields[fieldIndex];
-        if (key === 'username') setUsername((v) => v + e.key);
-        if (key === 'email') setEmail((v) => v + e.key);
-        if (key === 'password') setPassword((v) => v + e.key);
-      }
+      // Character input and Backspace are handled by the hidden text input below
+      // (see hiddenInputRef) — it's what lets mobile browsers show the on-screen
+      // keyboard at all, since a plain focusable <div> never triggers it.
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [fieldIndex, fields, navigate, mode, login, register, username, email, password, t, playSfx, unlock]);
 
+  // Keep the hidden input focused whenever the selected field is a text field, so the
+  // mobile keyboard stays up as the user moves between username/email/password with
+  // the D-pad or arrow keys, and shows up in the first place on initial load.
   useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
+    if (isTextField) {
+      hiddenInputRef.current?.focus();
+    } else {
+      hiddenInputRef.current?.blur();
+      containerRef.current?.focus();
+    }
+  }, [isTextField, mode]);
+
+  const { onTouchStart, onTouchEnd } = useSwipeNavigation({
+    onUp: () => {
+      unlock();
+      playSfx('navigate');
+      setFieldIndex((i) => Math.max(0, i - 1));
+    },
+    onDown: () => {
+      unlock();
+      playSfx('navigate');
+      setFieldIndex((i) => Math.min(fields.length - 1, i + 1));
+    },
+  });
 
   return (
     <CrtFullscreen>
-      <div className="crt-fullscreen" ref={containerRef} tabIndex={0}>
+      <div
+        className="crt-fullscreen"
+        ref={containerRef}
+        tabIndex={0}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onClick={() => {
+          if (isTextField) hiddenInputRef.current?.focus();
+        }}
+      >
+        <input
+          ref={hiddenInputRef}
+          className="crt-auth-hidden-input"
+          value={currentFieldValue()}
+          onChange={(e) => setCurrentFieldValue(e.target.value)}
+          onKeyDown={(e) => {
+            // Let Enter submit/advance the same way the physical keyboard does;
+            // stopPropagation isn't needed since the window listener above no
+            // longer touches character keys.
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              unlock();
+              if (fieldIndex === fields.length - 1) {
+                playSfx('confirm');
+                submit();
+              } else {
+                playSfx('navigate');
+                setFieldIndex((i) => Math.min(fields.length - 1, i + 1));
+              }
+            }
+          }}
+          type={activeFieldKey === 'password' ? 'password' : 'text'}
+          inputMode={activeFieldKey === 'email' ? 'email' : 'text'}
+          autoCapitalize="none"
+          autoCorrect="off"
+          autoComplete={activeFieldKey === 'password' ? (mode === 'login' ? 'current-password' : 'new-password') : activeFieldKey}
+          spellCheck={false}
+          aria-label={activeFieldKey}
+          tabIndex={-1}
+        />
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
         <CrtTouchDpad
           mode="menu"

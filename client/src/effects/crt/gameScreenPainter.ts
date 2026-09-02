@@ -19,6 +19,8 @@ const COLORS = {
   accent: { fill: '#ffba5e', glow: 'rgba(255,150,52,0.85)' },
   /** Bright CRT phosphor — selected char / word */
   selected: { fill: '#bdf8d2', glow: 'rgba(28,236,132,0.98)' },
+  /** Dimmed phase of the selection blink — still clearly distinct from primary, never invisible */
+  selectedDim: { fill: '#7fd6a6', glow: 'rgba(28,236,132,0.55)' },
   selectedBracket: { fill: '#1cec84', glow: 'rgba(28,236,132,1)' },
   error: { fill: '#ff6b6b', glow: 'rgba(255,100,100,0.9)' },
   bracketIdle: { fill: '#ffba5e', glow: 'rgba(255,150,52,0.75)' },
@@ -162,7 +164,10 @@ export function paintGameScreen(
   drawText(ctx, '─'.repeat(Math.min(colsPerRow + 10, 54)), startX, y, COLORS.dim, fontSize);
   y += lineHeight * 0.85;
 
-  const showSelection = Boolean(selection && selectionBlink);
+  // The selection highlight is always visible — selectionBlink only toggles between
+  // full brightness and a dimmed phosphor glow, so the cursor is never fully invisible
+  // (previously it vanished for half the blink cycle, which made moving hard to track).
+  const showSelection = Boolean(selection);
   const blockH = lineHeight * 0.88;
 
   for (let row = 0; row < gridRows; row++) {
@@ -183,7 +188,7 @@ export function paintGameScreen(
       let x = charsX;
       for (const seg of segments) {
         if (seg.selected) {
-          drawPhosphorBlock(ctx, x - 1, rowBlockY, charWidth + 2, blockH, 1);
+          drawPhosphorBlock(ctx, x - 1, rowBlockY, charWidth + 2, blockH, selectionBlink ? 1 : 0.42);
         }
         x += charWidth;
       }
@@ -194,7 +199,7 @@ export function paintGameScreen(
       let color = COLORS.primary;
 
       if (seg.selected && showSelection) {
-        color = COLORS.selected;
+        color = selectionBlink ? COLORS.selected : COLORS.selectedDim;
       } else if (seg.gridIndex !== null) {
         const inIdleBracket = gameState.brackets?.some(
           (b) => !b.used && seg.gridIndex! >= b.startIndex && seg.gridIndex! <= b.endIndex,
@@ -206,7 +211,14 @@ export function paintGameScreen(
         }
       }
 
-      const glow = seg.selected && showSelection ? 0.62 : color === COLORS.accent ? 0.48 : 0.28;
+      const glow =
+        seg.selected && showSelection
+          ? selectionBlink
+            ? 0.62
+            : 0.4
+          : color === COLORS.accent
+            ? 0.48
+            : 0.28;
       drawText(ctx, seg.char, x, y, color, fontSize, glow);
       x += charWidth;
     }

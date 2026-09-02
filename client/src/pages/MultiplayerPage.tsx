@@ -6,6 +6,7 @@ import { TerminalGame } from '../components/TerminalGame';
 import { CrtFullscreen } from '../components/CrtFullscreen';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
@@ -220,6 +221,11 @@ export function MultiplayerPage() {
     }
   };
 
+  const lobbySwipe = useSwipeNavigation({
+    onUp: () => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.max(0, i - 1)); },
+    onDown: () => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.min(lobbyItems.length - 1, i + 1)); },
+  });
+
   useEffect(() => {
     if (phase !== 'lobby') return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -243,7 +249,13 @@ export function MultiplayerPage() {
   if (phase === 'lobby') {
     return (
       <CrtFullscreen>
-        <div className="crt-fullscreen" ref={containerRef} tabIndex={0}>
+        <div
+          className="crt-fullscreen"
+          ref={containerRef}
+          tabIndex={0}
+          onTouchStart={lobbySwipe.onTouchStart}
+          onTouchEnd={lobbySwipe.onTouchEnd}
+        >
           <CrtTerminal getScreenData={getLobbyScreen} brightness={1.1} opacity={1} />
           <CrtTouchDpad
             mode="menu"

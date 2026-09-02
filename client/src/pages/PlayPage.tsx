@@ -10,6 +10,7 @@ import { useAudio } from '../context/AudioContext';
 import { api } from '../services/api';
 import { createGame, normalizeGameLanguage } from '@nv-hacking/shared';
 import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import type { CrtScreenState } from '../effects/crt/crtScreenTypes';
 import '../components/CrtFullscreen.css';
 
@@ -64,6 +65,23 @@ export function PlayPage() {
     createGame({ difficulty, language: normalizeGameLanguage(language) });
   };
 
+  // Mirrors the `actions` array built below (save? + new + menu) — kept separate so the
+  // swipe hook (a hook, so it must run unconditionally on every render) doesn't need the
+  // end-screen-only JSX below to compute it.
+  const endActionsCount = (user && endResult?.won && !saved ? 1 : 0) + 2;
+  const endScreenSwipe = useSwipeNavigation({
+    onUp: () => {
+      unlock();
+      playSfx('navigate');
+      setSelectedIndex((i) => Math.max(0, i - 1));
+    },
+    onDown: () => {
+      unlock();
+      playSfx('navigate');
+      setSelectedIndex((i) => Math.min(endActionsCount - 1, i + 1));
+    },
+  });
+
   if (!playing && endResult) {
     const actions = [
       ...(user && endResult.won && !saved ? [{ id: 'save', label: t('game.saveScore') }] : []),
@@ -105,6 +123,8 @@ export function PlayPage() {
         <div
           className="crt-fullscreen"
           tabIndex={0}
+          onTouchStart={endScreenSwipe.onTouchStart}
+          onTouchEnd={endScreenSwipe.onTouchEnd}
           onKeyDown={(e) => {
             if (e.key === 'ArrowUp') {
               unlock();

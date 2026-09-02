@@ -164,6 +164,11 @@ export function createGameCrtRenderer(
   let lastScreenKey = '';
   let style = { ...HACKING_CRT_STYLE };
   const startedAt = performance.now();
+  // Separate anchor for the selection blink only (not the CRT shader's time uniform):
+  // reset to "just started" whenever the selected cell/word changes, so moving the
+  // cursor never lands mid-blink-off — it always reappears fully bright immediately.
+  let blinkAnchor = startedAt;
+  let lastSelectionKey = '';
 
   const applyStyle = () => {
     gl.useProgram(program);
@@ -249,7 +254,13 @@ export function createGameCrtRenderer(
     },
     render(now: number) {
       const data = getScreenData();
-      const blinkOn = selectionBlinkOn(now, startedAt);
+      const selectionKey =
+        data.type === 'game' && data.selection ? `${data.selection.start}-${data.selection.end}` : '';
+      if (selectionKey !== lastSelectionKey) {
+        lastSelectionKey = selectionKey;
+        blinkAnchor = now;
+      }
+      const blinkOn = selectionBlinkOn(now, blinkAnchor);
       const blinkKey = blinkOn ? 1 : 0;
       const screenKey = JSON.stringify(data);
 

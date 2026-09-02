@@ -18,6 +18,7 @@ import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtFullscreen } from './CrtFullscreen';
 import { CrtTouchDpad } from './CrtTouchDpad';
 import { useAudio } from '../context/AudioContext';
+import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import type { CrtScreenState } from '../effects/crt/crtScreenTypes';
 import '../effects/crt/threeui.css';
 import './CrtFullscreen.css';
@@ -125,6 +126,13 @@ export function TerminalGame({
     [readOnly, gameState, brackets, colsPerRow, totalRows, playSfx, unlock],
   );
 
+  const { onTouchStart, onTouchEnd } = useSwipeNavigation({
+    onUp: () => navigate(0, -1),
+    onDown: () => navigate(0, 1),
+    onLeft: () => navigate(-1, 0),
+    onRight: () => navigate(1, 0),
+  });
+
   const confirmSelection = useCallback(() => {
     if (readOnly || gameState.status !== 'playing') return;
     unlock();
@@ -225,6 +233,8 @@ export function TerminalGame({
         tabIndex={0}
         role="application"
         aria-label={t('game.selectWord')}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
         <CrtTouchDpad
