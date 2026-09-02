@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtFullscreen } from '../components/CrtFullscreen';
-import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { CrtMobileHint } from '../components/CrtMobileHint';
 import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
+import { useTouchUi } from '../hooks/useTouchUi';
+import { getCrtMenuFooterLines } from '../utils/crtMenuFooter';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { useAudio } from '../context/AudioContext';
@@ -23,6 +25,7 @@ export function CrtMenuPage() {
   const { enabled: audioEnabled, toggleEnabled, playSfx, unlock } = useAudio();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchUi = useTouchUi();
 
   const items = useMemo(() => {
     const list = [
@@ -114,8 +117,8 @@ export function CrtMenuPage() {
     subtitle: t('app.subtitle'),
     items,
     headerRight: user?.username,
-    footerLines: [t('menu.navHint'), t('menu.enterHint')],
-  }), [selectedIndex, items, t, user]);
+    footerLines: getCrtMenuFooterLines(t, touchUi),
+  }), [selectedIndex, items, t, user, touchUi]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -161,6 +164,10 @@ export function CrtMenuPage() {
       playSfx('navigate');
       setSelectedIndex((i) => (i >= items.length - 1 ? 0 : i + 1));
     },
+    onTap: () => {
+      unlock();
+      activate(items[selectedIndex]?.id ?? '');
+    },
   });
 
   return (
@@ -173,23 +180,7 @@ export function CrtMenuPage() {
         onTouchEnd={onTouchEnd}
       >
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
-        <CrtTouchDpad
-          mode="menu"
-          onUp={() => {
-            unlock();
-            playSfx('navigate');
-            setSelectedIndex((i) => (i <= 0 ? items.length - 1 : i - 1));
-          }}
-          onDown={() => {
-            unlock();
-            playSfx('navigate');
-            setSelectedIndex((i) => (i >= items.length - 1 ? 0 : i + 1));
-          }}
-          onOk={() => {
-            unlock();
-            activate(items[selectedIndex]?.id ?? '');
-          }}
-        />
+        <CrtMobileHint />
       </div>
     </CrtFullscreen>
   );

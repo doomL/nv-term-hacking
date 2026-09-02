@@ -10,7 +10,10 @@ import { useAudio } from '../context/AudioContext';
 import { api } from '../services/api';
 import { createGame, normalizeGameLanguage } from '@nv-hacking/shared';
 import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { CrtMobileHint } from '../components/CrtMobileHint';
 import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
+import { useTouchUi } from '../hooks/useTouchUi';
+import { getCrtMenuFooterLines } from '../utils/crtMenuFooter';
 import type { CrtScreenState } from '../effects/crt/crtScreenTypes';
 import '../components/CrtFullscreen.css';
 
@@ -30,6 +33,7 @@ export function PlayPage() {
   } | null>(null);
   const [saved, setSaved] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const touchUi = useTouchUi();
 
   const handleGameEnd = useCallback(
     (score: number, won: boolean, timeMs: number, attemptsLeft: number) => {
@@ -80,6 +84,19 @@ export function PlayPage() {
       playSfx('navigate');
       setSelectedIndex((i) => Math.min(endActionsCount - 1, i + 1));
     },
+    onTap: () => {
+      unlock();
+      playSfx('confirm');
+      const actions = [
+        ...(user && endResult?.won && !saved ? ['save'] : []),
+        'new',
+        'menu',
+      ];
+      const action = actions[selectedIndex];
+      if (action === 'save') handleSaveScore();
+      else if (action === 'new') handleNewGame();
+      else if (action === 'menu') navigate('/');
+    },
   });
 
   if (!playing && endResult) {
@@ -106,7 +123,7 @@ export function PlayPage() {
           tone: (i === selectedIndex ? 'selected' : 'primary') as 'selected' | 'primary',
         })),
       ],
-      footerLines: [t('menu.navHint'), t('menu.enterHint'), t('menu.back')],
+      footerLines: getCrtMenuFooterLines(t, touchUi, [t('menu.back')]),
     });
 
     const activate = () => {
@@ -144,6 +161,7 @@ export function PlayPage() {
           }}
         >
           <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
+          <CrtMobileHint />
           <CrtTouchDpad
             mode="menu"
             backLabel={t('menu.backButton')}
@@ -151,17 +169,6 @@ export function PlayPage() {
               playSfx('back');
               navigate('/');
             }}
-            onUp={() => {
-              unlock();
-              playSfx('navigate');
-              setSelectedIndex((i) => Math.max(0, i - 1));
-            }}
-            onDown={() => {
-              unlock();
-              playSfx('navigate');
-              setSelectedIndex((i) => Math.min(actions.length - 1, i + 1));
-            }}
-            onOk={activate}
           />
         </div>
       </CrtFullscreen>

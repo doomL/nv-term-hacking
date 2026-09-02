@@ -78,6 +78,8 @@ const resources = {
       menu: {
         navHint: '↑↓ NAVIGATE',
         enterHint: 'ENTER / OK TO SELECT',
+        swipeHint: 'Swipe to navigate',
+        tapHint: 'Tap to select',
         cycleSetting: 'ENTER to cycle',
         back: 'ESC / ← MENU — return to menu',
         backButton: '← MENU',
@@ -188,6 +190,8 @@ const resources = {
       menu: {
         navHint: '↑↓ NAVIGA',
         enterHint: 'INVIO / OK PER SELEZIONARE',
+        swipeHint: 'Scorri per navigare',
+        tapHint: 'Tocca per selezionare',
         cycleSetting: 'INVIO per cambiare',
         back: 'ESC / ← MENU — torna al menu',
         backButton: '← MENU',

@@ -6,7 +6,10 @@ import { TerminalGame } from '../components/TerminalGame';
 import { CrtFullscreen } from '../components/CrtFullscreen';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { CrtMobileHint } from '../components/CrtMobileHint';
 import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
+import { useTouchUi } from '../hooks/useTouchUi';
+import { getCrtMenuFooterLines } from '../utils/crtMenuFooter';
 import { useSettings } from '../context/SettingsContext';
 import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
@@ -55,6 +58,7 @@ export function MultiplayerPage() {
   const [saved, setSaved] = useState(false);
   const [menuIndex, setMenuIndex] = useState(0);
   const [lobbyStats, setLobbyStats] = useState({ onlinePlayers: 0, openRooms: 0 });
+  const touchUi = useTouchUi();
 
   const username = user?.username ?? guestName;
   const playSfxRef = useRef(playSfx);
@@ -169,8 +173,8 @@ export function MultiplayerPage() {
       t('multiplayer.openRooms', { count: lobbyStats.openRooms }),
       ...(error ? [`! ${error}`] : []),
     ],
-    footerLines: [t('menu.navHint'), t('menu.enterHint'), t('menu.back')],
-  }), [menuIndex, lobbyItems, t, lobbyStats, error]);
+    footerLines: getCrtMenuFooterLines(t, touchUi, [t('menu.back')]),
+  }), [menuIndex, lobbyItems, t, lobbyStats, error, touchUi]);
 
   const getWaitingScreen = useCallback((): CrtScreenState => {
     if (!room) return getLobbyScreen();
@@ -194,9 +198,9 @@ export function MultiplayerPage() {
       selectionBlink: true,
       title: `${t('multiplayer.roomCode')}: ${room.id}`,
       lines: allLines,
-      footerLines: [t('menu.enterHint'), t('menu.back')],
+      footerLines: getCrtMenuFooterLines(t, touchUi, [t('menu.back')]),
     };
-  }, [room, t, getLobbyScreen]);
+  }, [room, t, getLobbyScreen, touchUi]);
 
   const activateLobby = () => {
     const id = lobbyItems[menuIndex]?.id;
@@ -216,6 +220,26 @@ export function MultiplayerPage() {
   const lobbySwipe = useSwipeNavigation({
     onUp: () => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.max(0, i - 1)); },
     onDown: () => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.min(lobbyItems.length - 1, i + 1)); },
+    onTap: () => activateLobby(),
+  });
+
+  const waitingTap = useSwipeNavigation({
+    onTap: () => {
+      if (room && room.players.length === 2) {
+        unlock();
+        playSfx('confirm');
+        setReady();
+      }
+    },
+  });
+
+  const finishedTap = useSwipeNavigation({
+    onTap: () => {
+      unlock();
+      playSfx('confirm');
+      if (user && room?.winnerId === mySocketId && !saved) handleSaveScore();
+      else leaveRoom();
+    },
   });
 
   useEffect(() => {
@@ -242,6 +266,7 @@ export function MultiplayerPage() {
           onTouchEnd={lobbySwipe.onTouchEnd}
         >
           <CrtTerminal getScreenData={getLobbyScreen} brightness={1.1} opacity={1} />
+          <CrtMobileHint />
           <CrtTouchDpad
             mode="menu"
             backLabel={t('menu.backButton')}
@@ -249,9 +274,6 @@ export function MultiplayerPage() {
               playSfx('back');
               navigate('/');
             }}
-            onUp={() => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.max(0, i - 1)); }}
-            onDown={() => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.min(lobbyItems.length - 1, i + 1)); }}
-            onOk={activateLobby}
           />
         </div>
       </CrtFullscreen>
@@ -264,17 +286,19 @@ export function MultiplayerPage() {
         <div
           className="crt-fullscreen"
           tabIndex={0}
+          onTouchStart={waitingTap.onTouchStart}
+          onTouchEnd={waitingTap.onTouchEnd}
           onKeyDown={(e) => {
             if (e.key === 'Escape') { playSfx('back'); leaveRoom(); }
             if (e.key === 'Enter' && room.players.length === 2) { unlock(); playSfx('confirm'); setReady(); }
           }}
         >
           <CrtTerminal getScreenData={getWaitingScreen} brightness={1.1} opacity={1} />
+          <CrtMobileHint />
           <CrtTouchDpad
             mode="menu"
             backLabel={t('menu.backButton')}
             onBack={() => { playSfx('back'); leaveRoom(); }}
-            onOk={() => { unlock(); playSfx('confirm'); room.players.length === 2 && setReady(); }}
           />
         </div>
       </CrtFullscreen>
@@ -295,7 +319,7 @@ export function MultiplayerPage() {
         { text: '[>] ' + t('game.newGame'), tone: 'selected' as const },
         { text: '    ' + t('nav.home'), tone: 'primary' as const },
       ],
-      footerLines: [t('menu.enterHint'), t('menu.back')],
+      footerLines: getCrtMenuFooterLines(t, touchUi, [t('menu.back')]),
     });
 
     return (
@@ -303,6 +327,8 @@ export function MultiplayerPage() {
         <div
           className="crt-fullscreen"
           tabIndex={0}
+          onTouchStart={finishedTap.onTouchStart}
+          onTouchEnd={finishedTap.onTouchEnd}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               unlock();
@@ -314,15 +340,11 @@ export function MultiplayerPage() {
           }}
         >
           <CrtTerminal getScreenData={getScreen} brightness={1.1} opacity={1} />
+          <CrtMobileHint />
           <CrtTouchDpad
+            mode="menu"
             backLabel={t('menu.backButton')}
             onBack={() => { playSfx('back'); navigate('/'); }}
-            onOk={() => {
-              unlock();
-              playSfx('confirm');
-              if (user && won && !saved) handleSaveScore();
-              else leaveRoom();
-            }}
           />
         </div>
       </CrtFullscreen>

@@ -22,7 +22,8 @@ export function CrtTouchDpad({
   mode = 'game',
 }: CrtTouchDpadProps) {
   const showHorizontal = mode === 'game';
-  const showDpad = Boolean(onUp || onDown || onLeft || onRight || onOk);
+  // Menu screens use swipe + tap; only gameplay keeps the on-screen D-pad.
+  const showDpad = mode === 'game' && Boolean(onUp || onDown || onLeft || onRight || onOk);
 
   return (
     <div className="crt-touch-layer">

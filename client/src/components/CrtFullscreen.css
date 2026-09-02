@@ -8,6 +8,7 @@
   display: flex;
   flex-direction: column;
   outline: none;
+  isolation: isolate;
 }
 
 .crt-fullscreen .crt-terminal {
@@ -113,6 +114,25 @@
     min-height: 40px;
     padding: 0 10px;
   }
+}
+
+.crt-mobile-hint {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 3;
+  pointer-events: none;
+  text-align: right;
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: rgba(141, 240, 180, 0.65);
+  letter-spacing: 0.03em;
+  text-shadow: 0 0 8px rgba(28, 236, 132, 0.35);
+}
+
+.crt-mobile-hint span {
+  display: block;
 }
 
 @media (pointer: fine) and (min-width: 901px) {

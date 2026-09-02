@@ -41,6 +41,8 @@ export function paintTextScreen(
   const contentWidth = width * 0.88;
   const blink = data.selectionBlink ? 1 : 0.08;
 
+  const footerStartY = height - lineHeight * (data.footerLines.length + 0.8);
+
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#03100a';
   ctx.fillRect(0, 0, width, height);
@@ -58,6 +60,7 @@ export function paintTextScreen(
   y += lineHeight;
 
   data.lines.forEach((line, index) => {
+    if (y + lineHeight > footerStartY - lineHeight * 0.25) return;
     const selectable = data.selectableLines?.includes(index);
     const selected = selectable && data.selectedIndex === index;
     const color = selected
@@ -73,7 +76,7 @@ export function paintTextScreen(
     y += lineHeight;
   });
 
-  y = height - lineHeight * (data.footerLines.length + 0.8);
+  y = footerStartY;
   for (const line of data.footerLines) {
     drawCrtText(ctx, line, startX, y, CRT_COLORS.dim, fontSize * 0.9, 0.2);
     y += lineHeight * 0.85;

@@ -6,6 +6,8 @@ export interface SwipeHandlers {
   onDown?: () => void;
   onLeft?: () => void;
   onRight?: () => void;
+  /** Short tap without a directional swipe — e.g. confirm selection on menu screens. */
+  onTap?: () => void;
 }
 
 const SWIPE_THRESHOLD_PX = 32;
@@ -39,7 +41,10 @@ export function useSwipeNavigation(handlers: SwipeHandlers) {
     const touch = e.changedTouches[0];
     const dx = touch.clientX - start.x;
     const dy = touch.clientY - start.y;
-    if (Math.abs(dx) < SWIPE_THRESHOLD_PX && Math.abs(dy) < SWIPE_THRESHOLD_PX) return;
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX && Math.abs(dy) < SWIPE_THRESHOLD_PX) {
+      handlersRef.current.onTap?.();
+      return;
+    }
 
     const { onUp, onDown, onLeft, onRight } = handlersRef.current;
     if (Math.abs(dx) > Math.abs(dy)) {

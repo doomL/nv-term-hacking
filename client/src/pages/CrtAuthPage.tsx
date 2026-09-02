@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { CrtFullscreen } from '../components/CrtFullscreen';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtTouchDpad } from '../components/CrtTouchDpad';
+import { CrtMobileHint } from '../components/CrtMobileHint';
 import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
+import { useTouchUi } from '../hooks/useTouchUi';
+import { getCrtMenuFooterLines } from '../utils/crtMenuFooter';
 import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
 import type { CrtScreenState } from '../effects/crt/crtScreenTypes';
@@ -28,6 +31,7 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
   const [error, setError] = useState('');
   const [fieldIndex, setFieldIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchUi = useTouchUi();
 
   const fields = mode === 'login'
     ? ['username', 'password', 'submit']
@@ -76,9 +80,9 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
       selectionBlink: true,
       title: mode === 'login' ? t('auth.login') : t('auth.register'),
       lines,
-      footerLines: [t('menu.navHint'), t('menu.enterHint'), t('menu.back')],
+      footerLines: getCrtMenuFooterLines(t, touchUi, [t('menu.back')]),
     };
-  }, [t, mode, username, email, password, fieldIndex, error, fields.length]);
+  }, [t, mode, username, email, password, fieldIndex, error, fields.length, touchUi]);
 
   const submit = async () => {
     setError('');
@@ -156,6 +160,15 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
       playSfx('navigate');
       setFieldIndex((i) => Math.min(fields.length - 1, i + 1));
     },
+    onTap: () => {
+      unlock();
+      if (fieldIndex === fields.length - 1) {
+        playSfx('confirm');
+        submit();
+      } else if (isTextField) {
+        hiddenInputRef.current?.focus();
+      }
+    },
   });
 
   return (
@@ -201,29 +214,13 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
           tabIndex={-1}
         />
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
+        <CrtMobileHint />
         <CrtTouchDpad
           mode="menu"
           backLabel={t('menu.backButton')}
           onBack={() => {
             playSfx('back');
             navigate('/');
-          }}
-          onUp={() => {
-            unlock();
-            playSfx('navigate');
-            setFieldIndex((i) => Math.max(0, i - 1));
-          }}
-          onDown={() => {
-            unlock();
-            playSfx('navigate');
-            setFieldIndex((i) => Math.min(fields.length - 1, i + 1));
-          }}
-          onOk={() => {
-            unlock();
-            if (fieldIndex === fields.length - 1) {
-              playSfx('confirm');
-              submit();
-            }
           }}
         />
       </div>

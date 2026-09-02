@@ -59,14 +59,23 @@ function measureMenuItem(
   };
 }
 
+function estimateMenuLineCount(data: MenuPaintState): number {
+  const headerRows = 5.5;
+  const itemRows = data.items.reduce((sum, item) => sum + (item.hint ? 3 : 1.5), 0);
+  const statusRows = data.statusLines?.length ?? 0;
+  const footerRows = data.footerLines.length + 1;
+  return headerRows + itemRows + statusRows + footerRows;
+}
+
 export function paintMenuScreen(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   data: MenuPaintState,
 ) {
-  const lineCount = 4 + data.items.length * 2 + (data.statusLines?.length ?? 0) + data.footerLines.length;
+  const lineCount = estimateMenuLineCount(data);
   const { lineHeight, fontSize, charWidth, startX } = measureLayout(width, height, lineCount);
+  const footerStartY = height - lineHeight * (data.footerLines.length + 0.8);
   const contentWidth = width * 0.88;
   const blink = data.selectionBlink ? 1 : 0.08;
   const padX = fontSize * 0.55;
@@ -97,6 +106,8 @@ export function paintMenuScreen(
     const rowY = y;
     const marker = selected ? '[>]' : '   ';
     const layout = measureMenuItem(ctx, fontSize, marker, item);
+    const itemBlockHeight = layout.contentHeight + padY * 2 + lineHeight * 0.22;
+    if (rowY + itemBlockHeight > footerStartY - lineHeight * 0.25) return;
 
     if (selected) {
       drawPhosphorBlock(
@@ -138,12 +149,13 @@ export function paintMenuScreen(
   if (data.statusLines?.length) {
     y += lineHeight * 0.3;
     for (const line of data.statusLines) {
+      if (y + lineHeight > footerStartY - lineHeight * 0.25) break;
       drawCrtText(ctx, line, startX, y, CRT_COLORS.accent, fontSize, 0.4);
       y += lineHeight;
     }
   }
 
-  y = height - lineHeight * (data.footerLines.length + 0.8);
+  y = footerStartY;
   for (const line of data.footerLines) {
     drawCrtText(ctx, line, startX, y, CRT_COLORS.dim, fontSize * 0.9, 0.2);
     y += lineHeight * 0.85;
