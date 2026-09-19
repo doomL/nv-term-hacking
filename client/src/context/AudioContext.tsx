@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getAudioEngine, type SfxName } from '../audio/audioEngine';
 
 interface AudioContextValue {
@@ -7,6 +8,7 @@ interface AudioContextValue {
   toggleEnabled: () => void;
   playSfx: (name: SfxName) => void;
   unlock: () => void;
+  setGameplayMusic: (active: boolean) => void;
 }
 
 const AudioCtx = createContext<AudioContextValue | null>(null);
@@ -14,6 +16,7 @@ const AudioCtx = createContext<AudioContextValue | null>(null);
 export function AudioProvider({ children }: { children: ReactNode }) {
   const engine = useMemo(() => getAudioEngine(), []);
   const [enabled, setEnabledState] = useState(engine.enabled);
+  const { pathname } = useLocation();
 
   const unlock = useCallback(() => {
     void engine.unlock();
@@ -38,6 +41,28 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     [engine],
   );
 
+  const setGameplayMusic = useCallback(
+    (active: boolean) => {
+      engine.setGameplayMusic(active);
+    },
+    [engine],
+  );
+
+  useEffect(() => {
+    if (pathname !== '/play' && pathname !== '/multiplayer') {
+      engine.setGameplayMusic(false);
+    }
+  }, [pathname, engine]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) engine.handleDocumentHidden();
+      else engine.handleDocumentVisible();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [engine]);
+
   useEffect(() => {
     const onInteract = () => unlock();
     window.addEventListener('pointerdown', onInteract, { once: true });
@@ -55,8 +80,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       toggleEnabled,
       playSfx,
       unlock,
+      setGameplayMusic,
     }),
-    [enabled, setEnabled, toggleEnabled, playSfx, unlock],
+    [enabled, setEnabled, toggleEnabled, playSfx, unlock, setGameplayMusic],
   );
 
   return <AudioCtx.Provider value={value}>{children}</AudioCtx.Provider>;

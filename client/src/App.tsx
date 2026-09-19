@@ -13,8 +13,8 @@ export function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <AudioProvider>
-          <BrowserRouter>
+        <BrowserRouter>
+          <AudioProvider>
             <Routes>
               <Route path="/" element={<CrtMenuPage />} />
               <Route path="/play" element={<PlayPage />} />
@@ -23,8 +23,8 @@ export function App() {
               <Route path="/register" element={<CrtAuthPage mode="register" />} />
               <Route path="/leaderboard" element={<CrtLeaderboardPage />} />
             </Routes>
-          </BrowserRouter>
-        </AudioProvider>
+          </AudioProvider>
+        </BrowserRouter>
       </SettingsProvider>
     </AuthProvider>
   );
