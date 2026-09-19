@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import type { Difficulty } from '@nv-hacking/shared';
+import type { AppLanguage } from '../utils/languagePreference';
 import './NavBar.css';
 
 export function NavBar() {
@@ -20,7 +21,7 @@ export function NavBar() {
       <div className="navbar-controls">
         <select
           value={language}
-          onChange={(e) => setLanguage(e.target.value)}
+          onChange={(e) => setLanguage(e.target.value as AppLanguage)}
           aria-label={t('settings.language')}
           className="navbar-select"
         >

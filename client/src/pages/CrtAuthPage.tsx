@@ -30,6 +30,7 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [fieldIndex, setFieldIndex] = useState(0);
+  const [looking, setLooking] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchUi = useTouchUi();
 
@@ -149,7 +150,7 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
     }
   }, [isTextField, mode]);
 
-  const { onTouchStart, onTouchEnd } = useSwipeNavigation({
+  const { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useSwipeNavigation({
     onUp: () => {
       unlock();
       playSfx('navigate');
@@ -169,16 +170,19 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
         hiddenInputRef.current?.focus();
       }
     },
+    onLookChange: setLooking,
   });
 
   return (
     <CrtFullscreen>
       <div
-        className="crt-fullscreen"
+        className={`crt-fullscreen${looking ? ' crt-fullscreen--look' : ''}`}
         ref={containerRef}
         tabIndex={0}
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
         onClick={() => {
           if (isTextField) hiddenInputRef.current?.focus();
         }}
@@ -214,7 +218,7 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
           tabIndex={-1}
         />
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
-        <CrtMobileHint />
+        <CrtMobileHint looking={looking} />
         <CrtTouchDpad
           mode="menu"
           backLabel={t('menu.backButton')}

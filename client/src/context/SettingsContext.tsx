@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { Difficulty } from '@nv-hacking/shared';
+import { getInitialLanguage, type AppLanguage } from '../utils/languagePreference';
 
 interface SettingsContextValue {
   difficulty: Difficulty;
   setDifficulty: (d: Difficulty) => void;
-  language: string;
-  setLanguage: (lang: string) => void;
+  language: AppLanguage;
+  setLanguage: (lang: AppLanguage) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -14,16 +15,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [difficulty, setDifficultyState] = useState<Difficulty>(
     () => (localStorage.getItem('difficulty') as Difficulty) || 'novice',
   );
-  const [language, setLanguageState] = useState(
-    () => localStorage.getItem('language') || 'it',
-  );
+  const [language, setLanguageState] = useState(() => getInitialLanguage());
 
   const setDifficulty = useCallback((d: Difficulty) => {
     setDifficultyState(d);
     localStorage.setItem('difficulty', d);
   }, []);
 
-  const setLanguage = useCallback((lang: string) => {
+  const setLanguage = useCallback((lang: AppLanguage) => {
     setLanguageState(lang);
     localStorage.setItem('language', lang);
     import('../i18n').then(({ default: i18n }) => i18n.changeLanguage(lang));
