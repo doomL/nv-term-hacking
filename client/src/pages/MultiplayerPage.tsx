@@ -16,6 +16,7 @@ import { useAudio } from '../context/AudioContext';
 import { deserializeGameState, type BracketPair } from '@nv-hacking/shared';
 import type { GameState } from '@nv-hacking/shared';
 import { api } from '../services/api';
+import { localizeLastMessage } from '../utils/gameMessages';
 import type { CrtScreenState } from '../effects/crt/crtScreenTypes';
 import type { TextLine } from '../effects/crt/textScreenPainter';
 import '../components/CrtFullscreen.css';
@@ -89,7 +90,7 @@ export function MultiplayerPage() {
           return deserializeGameState({ ...gs, brackets: gs.brackets ?? [] });
         });
       }
-      if (result?.message) setMessage(result.message);
+      if (result) setMessage(localizeLastMessage(result.message ?? '', t));
     });
     socket.on('game:end', ({ room: r, password }) => {
       setRoom(r);
