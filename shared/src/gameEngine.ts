@@ -333,7 +333,7 @@ export function guessWord(state: GameState, word: string): GuessResult {
   }
 
   if (newState.removedWords.has(word)) {
-    newState.lastMessage = '';
+    newState.lastMessage = 'DUD REMOVED';
     return { state: newState };
   }
 
@@ -392,7 +392,7 @@ export function activateBracket(
     const rng = new SeededRandom(state.seed + newState.usedBrackets.size);
     const removed = rng.pick(activeWords);
     newState.removedWords.add(removed);
-    newState.lastMessage = '';
+    newState.lastMessage = 'DUD REMOVED';
     return { state: newState, bracketEffect: 'dud', removedWord: removed };
   }
 
