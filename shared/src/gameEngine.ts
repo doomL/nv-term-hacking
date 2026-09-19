@@ -419,4 +419,11 @@ export function deserializeGameState(raw: ReturnType<typeof serializeGameState>)
   };
 }
 
+/** Fallout-style attempt meter: filled blocks = remaining, hollow = spent. */
+export function formatAttemptsBlocks(attemptsLeft: number, maxAttempts = MAX_ATTEMPTS): string {
+  const max = Math.max(1, maxAttempts);
+  const left = Math.max(0, Math.min(attemptsLeft, max));
+  return '■'.repeat(left) + '□'.repeat(max - left);
+}
+
 export { DIFFICULTY_SETTINGS, MAX_ATTEMPTS } from './types.js';

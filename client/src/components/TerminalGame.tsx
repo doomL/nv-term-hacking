@@ -6,6 +6,8 @@ import {
   activateBracket,
   calculateScore,
   DIFFICULTY_SETTINGS,
+  formatAttemptsBlocks,
+  MAX_ATTEMPTS,
   moveCursorSelectable,
   normalizeGameLanguage,
   resolveHighlightAt,
@@ -14,6 +16,7 @@ import {
   type BracketPair,
   type HighlightRegion,
 } from '@nv-hacking/shared';
+import { localizeLastMessage } from '../utils/gameMessages';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtFullscreen } from './CrtFullscreen';
 import { CrtTouchDpad } from './CrtTouchDpad';
@@ -49,7 +52,6 @@ export function TerminalGame({
   const [localState, setLocalState] = useState(() =>
     createGame({ difficulty, language: normalizeGameLanguage(language) }),
   );
-  const [message, setMessage] = useState('');
   const [showWait, setShowWait] = useState(false);
   const [cursorIndex, setCursorIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,14 +92,21 @@ export function TerminalGame({
     prevStatusRef.current = gameState.status;
   }, [gameState.status, playSfx]);
 
+  useEffect(() => {
+    if (externalState) setShowWait(false);
+  }, [externalState, gameState]);
+
   const messages = useMemo(() => {
     const lines: string[] = [];
     if (showWait) lines.push(`>${t('game.pleaseWait')}`);
-    else if (message) lines.push(`>${message}`);
+    else {
+      const feedback = localizeLastMessage(gameState.lastMessage, t);
+      if (feedback) lines.push(`>${feedback}`);
+    }
     if (gameState.status === 'won') lines.push(`>${t('game.accessGranted')}`);
     if (gameState.status === 'locked') lines.push(`>${t('game.terminalLocked')}`);
     return lines;
-  }, [showWait, message, gameState.status, t]);
+  }, [showWait, gameState.lastMessage, gameState.status, t]);
 
   const getScreenData = useCallback((): CrtScreenState => ({
     type: 'game',
@@ -105,7 +114,10 @@ export function TerminalGame({
     selection: gameState.status === 'playing' ? selection : null,
     selectionBlink: true,
     headerLine: 'DoomCo TermLink v2.3.0',
-    attemptsLine: `${gameState.attemptsLeft}/${gameState.maxAttempts}`,
+    attemptsLine: formatAttemptsBlocks(
+      gameState.attemptsLeft,
+      gameState.maxAttempts ?? MAX_ATTEMPTS,
+    ),
     messages,
     colsPerRow,
     totalRows,
@@ -143,6 +155,7 @@ export function TerminalGame({
 
       if (onGuess) {
         playSfx('wait');
+        setShowWait(true);
         onGuess(highlight.word);
         return;
       }
@@ -152,7 +165,6 @@ export function TerminalGame({
       setTimeout(() => {
         const result = guessWord(localState, highlight.word);
         setLocalState({ ...localState, ...result.state, brackets: localState.brackets });
-        setMessage(result.state.lastMessage);
         setShowWait(false);
         if (result.state.status === 'playing') playSfx('error');
       }, 600);
@@ -168,7 +180,6 @@ export function TerminalGame({
 
       const result = activateBracket(localState, highlight.id);
       setLocalState({ ...localState, ...result.state, brackets: localState.brackets });
-      setMessage(result.state.lastMessage);
       playSfx('bracket');
     }
   }, [readOnly, gameState, highlight, onGuess, onBracket, localState, playSfx, unlock]);
