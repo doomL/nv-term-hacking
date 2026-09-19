@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { getInitialLanguage } from '../utils/languagePreference';
 
 const resources = {
   en: {
@@ -80,6 +81,8 @@ const resources = {
         enterHint: 'ENTER / OK TO SELECT',
         swipeHint: 'Swipe to navigate',
         tapHint: 'Tap to select',
+        lookHint: 'Hold to look',
+        looking: 'LOOK',
         cycleSetting: 'ENTER to cycle',
         back: 'ESC / ← MENU — return to menu',
         backButton: '← MENU',
@@ -192,6 +195,8 @@ const resources = {
         enterHint: 'INVIO / OK PER SELEZIONARE',
         swipeHint: 'Scorri per navigare',
         tapHint: 'Tocca per selezionare',
+        lookHint: 'Tieni premuto per guardare',
+        looking: 'GUARDA',
         cycleSetting: 'INVIO per cambiare',
         back: 'ESC / ← MENU — torna al menu',
         backButton: '← MENU',
@@ -230,7 +235,7 @@ const resources = {
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: localStorage.getItem('language') || 'it',
+  lng: getInitialLanguage(),
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
 });

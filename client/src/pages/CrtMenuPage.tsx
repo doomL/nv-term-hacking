@@ -24,6 +24,7 @@ export function CrtMenuPage() {
   const { difficulty, setDifficulty, language, setLanguage } = useSettings();
   const { enabled: audioEnabled, toggleEnabled, playSfx, unlock } = useAudio();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [looking, setLooking] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchUi = useTouchUi();
 
@@ -153,7 +154,7 @@ export function CrtMenuPage() {
     containerRef.current?.focus();
   }, []);
 
-  const { onTouchStart, onTouchEnd } = useSwipeNavigation({
+  const { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useSwipeNavigation({
     onUp: () => {
       unlock();
       playSfx('navigate');
@@ -168,19 +169,22 @@ export function CrtMenuPage() {
       unlock();
       activate(items[selectedIndex]?.id ?? '');
     },
+    onLookChange: setLooking,
   });
 
   return (
     <CrtFullscreen>
       <div
-        className="crt-fullscreen"
+        className={`crt-fullscreen${looking ? ' crt-fullscreen--look' : ''}`}
         ref={containerRef}
         tabIndex={0}
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
       >
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
-        <CrtMobileHint />
+        <CrtMobileHint looking={looking} />
       </div>
     </CrtFullscreen>
   );

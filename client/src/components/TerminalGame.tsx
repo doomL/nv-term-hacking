@@ -20,6 +20,7 @@ import { localizeLastMessage } from '../utils/gameMessages';
 import { CrtTerminal } from '../effects/crt/CrtTerminal';
 import { CrtFullscreen } from './CrtFullscreen';
 import { CrtTouchDpad } from './CrtTouchDpad';
+import { CrtMobileHint } from './CrtMobileHint';
 import { useAudio } from '../context/AudioContext';
 import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import type { CrtScreenState } from '../effects/crt/crtScreenTypes';
@@ -39,7 +40,7 @@ interface TerminalGameProps {
 
 export function TerminalGame({
   difficulty,
-  language = 'it',
+  language = 'en',
   onExit,
   onGameEnd,
   externalState,
@@ -54,6 +55,7 @@ export function TerminalGame({
   );
   const [showWait, setShowWait] = useState(false);
   const [cursorIndex, setCursorIndex] = useState(0);
+  const [looking, setLooking] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const gameState = externalState ?? localState;
@@ -138,11 +140,17 @@ export function TerminalGame({
     [readOnly, gameState, brackets, colsPerRow, totalRows, playSfx, unlock],
   );
 
-  const { onTouchStart, onTouchEnd } = useSwipeNavigation({
+  useEffect(() => {
+    if (gameState.status !== 'playing') setLooking(false);
+  }, [gameState.status]);
+
+  const { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useSwipeNavigation({
     onUp: () => navigate(0, -1),
     onDown: () => navigate(0, 1),
     onLeft: () => navigate(-1, 0),
     onRight: () => navigate(1, 0),
+    onLookChange:
+      gameState.status === 'playing' && !readOnly ? setLooking : undefined,
   });
 
   const confirmSelection = useCallback(() => {
@@ -239,15 +247,18 @@ export function TerminalGame({
   return (
     <CrtFullscreen>
       <div
-        className="crt-fullscreen"
+        className={`crt-fullscreen${looking ? ' crt-fullscreen--look' : ''}`}
         ref={containerRef}
         tabIndex={0}
         role="application"
         aria-label={t('game.selectWord')}
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
       >
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
+        <CrtMobileHint looking={looking} />
         <CrtTouchDpad
           mode="game"
           backLabel={t('menu.backButton')}
