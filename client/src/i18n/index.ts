@@ -43,7 +43,7 @@ const resources = {
         pleaseWait: 'Please wait...',
         accessGranted: 'ACCESS GRANTED',
         terminalLocked: 'TERMINAL LOCKED',
-        dudRemoved: 'DUD REMOVED',
+        dudRemoved: 'Dud removed',
         attemptsReplenished: 'ATTEMPTS REPLENISHED',
         correct: 'correct',
         selectWord: 'Select a word or bracket sequence',
