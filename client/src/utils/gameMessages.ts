@@ -14,8 +14,6 @@ export function localizeLastMessage(message: string, t: TFunction): string {
       return t('game.accessGranted');
     case 'TERMINAL LOCKED':
       return t('game.terminalLocked');
-    case 'DUD REMOVED':
-      return t('game.dudRemoved');
     case 'ATTEMPTS REPLENISHED':
       return t('game.attemptsReplenished');
     default:
