@@ -65,6 +65,8 @@ export function MultiplayerPage() {
   const username = user?.username ?? guestName;
   const playSfxRef = useRef(playSfx);
   playSfxRef.current = playSfx;
+  const unlockRef = useRef(unlock);
+  unlockRef.current = unlock;
 
   useEffect(() => {
     const socket = io(SOCKET_URL || undefined, { transports: ['websocket', 'polling'] });
@@ -77,6 +79,7 @@ export function MultiplayerPage() {
     });
     socket.on('room:updated', ({ room: r }) => setRoom(r));
     socket.on('game:start', ({ room: r, gameState: gs }) => {
+      unlockRef.current();
       setRoom(r);
       setPhase('playing');
       if (gs) setGameState(deserializeGameState({ ...gs, brackets: gs.brackets ?? [] }));

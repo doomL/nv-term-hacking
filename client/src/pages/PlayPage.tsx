@@ -62,6 +62,7 @@ export function PlayPage() {
   };
 
   const handleNewGame = () => {
+    unlock();
     setEndResult(null);
     setSaved(false);
     setPlaying(true);
