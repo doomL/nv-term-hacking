@@ -68,11 +68,17 @@ async function loadPlaylistTracks(): Promise<string[]> {
   return playlistPromise;
 }
 
+function isPlayBlockedError(err: unknown): boolean {
+  return (
+    err instanceof DOMException &&
+    (err.name === 'NotAllowedError' || err.name === 'AbortError')
+  );
+}
+
 function ensureAudio(ctx: AudioContext, bus: GainNode): HTMLAudioElement {
   if (!audio) {
     audio = new Audio();
     audio.preload = 'auto';
-    audio.crossOrigin = 'anonymous';
   }
   if (connectedBus !== bus || !mediaSource) {
     mediaSource?.disconnect();
@@ -100,7 +106,10 @@ function playUrl(el: HTMLAudioElement, url: string, onEnded: () => void, onError
   el.src = url;
   el.onended = onEnded;
   el.onerror = onError;
-  void el.play().catch(() => onError());
+  void el.play().catch((err) => {
+    if (isPlayBlockedError(err)) return;
+    onError();
+  });
 }
 
 function playFallback(ctx: AudioContext, bus: GainNode) {
@@ -148,12 +157,31 @@ function playCurrentTrack(ctx: AudioContext, bus: GainNode) {
   );
 }
 
-export function startFalloutRadio(ctx: AudioContext, bus: GainNode) {
+export async function resumeFalloutRadioPlayback(ctx: AudioContext, bus: GainNode): Promise<void> {
+  if (stopped) return;
+  const el = ensureAudio(ctx, bus);
+  if (!el.src) {
+    playCurrentTrack(ctx, bus);
+    return;
+  }
+  if (ctx.state === 'suspended') await ctx.resume();
+  try {
+    await el.play();
+  } catch (err) {
+    if (!isPlayBlockedError(err)) {
+      /* keep current track; real load/decode errors use el.onerror */
+    }
+  }
+}
+
+export async function startFalloutRadio(ctx: AudioContext, bus: GainNode): Promise<void> {
   stopFalloutRadio();
   stopped = false;
   useFallback = false;
   trackIndex = 0;
   loadFailures = 0;
+
+  if (ctx.state === 'suspended') await ctx.resume();
 
   void loadPlaylistTracks().then((list) => {
     if (stopped) return;

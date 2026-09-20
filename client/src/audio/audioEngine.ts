@@ -1,4 +1,4 @@
-import { startFalloutRadio, stopFalloutRadio } from './falloutRadio';
+import { resumeFalloutRadioPlayback, startFalloutRadio, stopFalloutRadio } from './falloutRadio';
 import * as sfx from './sfx';
 
 export type SfxName =
@@ -55,10 +55,12 @@ class AudioEngine {
 
   async unlock(): Promise<void> {
     const ctx = this.ensureContext();
-    if (!ctx || this.unlocked) return;
+    if (!ctx) return;
     if (ctx.state === 'suspended') await ctx.resume();
     this.unlocked = true;
-    if (this.enabled && this.gameplayMusicWanted && !this.musicOn) this.startMusic();
+    if (!this.enabled || !this.gameplayMusicWanted) return;
+    if (!this.musicOn) await this.startMusic();
+    else if (this.musicBus) await resumeFalloutRadioPlayback(ctx, this.musicBus);
   }
 
   /** Start/stop in-game BGM. Does not affect SFX or the global audio enabled flag. */
@@ -68,7 +70,7 @@ class AudioEngine {
       this.stopMusic();
       return;
     }
-    if (this.enabled && this.unlocked) this.startMusic();
+    if (this.enabled && this.unlocked) void this.startMusic();
   }
 
   handleDocumentHidden() {
@@ -87,17 +89,18 @@ class AudioEngine {
     if (this.ctx?.state === 'suspended') void this.ctx.resume();
     if (this.pausedByHidden && this.gameplayMusicWanted) {
       this.pausedByHidden = false;
-      this.startMusic();
+      void this.startMusic();
     } else {
       this.pausedByHidden = false;
     }
   }
 
-  startMusic() {
+  async startMusic(): Promise<void> {
     const ctx = this.ensureContext();
     if (!ctx || !this.musicBus || this.musicOn || !this.enabled) return;
+    if (ctx.state === 'suspended') await ctx.resume();
     this.musicOn = true;
-    startFalloutRadio(ctx, this.musicBus);
+    await startFalloutRadio(ctx, this.musicBus);
   }
 
   stopMusic() {
