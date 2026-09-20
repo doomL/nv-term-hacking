@@ -1,4 +1,4 @@
-import { startVaultMusic, stopVaultMusic } from './vaultMusic';
+import { startFalloutRadio, stopFalloutRadio } from './falloutRadio';
 import * as sfx from './sfx';
 
 export type SfxName =
@@ -97,13 +97,13 @@ class AudioEngine {
     const ctx = this.ensureContext();
     if (!ctx || !this.musicBus || this.musicOn || !this.enabled) return;
     this.musicOn = true;
-    startVaultMusic(ctx, this.musicBus);
+    startFalloutRadio(ctx, this.musicBus);
   }
 
   stopMusic() {
     if (!this.musicOn) return;
     this.musicOn = false;
-    stopVaultMusic();
+    stopFalloutRadio();
   }
 
   play(name: SfxName) {
