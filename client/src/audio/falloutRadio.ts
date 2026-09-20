@@ -8,7 +8,11 @@ const PLAYLIST_URL = '/bgm/fallout-radio-playlist.json';
 const FALLBACK_TRACK = '/bgm/fallout-radio-full.mp3';
 
 /** Direct element output; tuned vs Web Audio SFX bus (~0.45). */
-const BGM_VOLUME = 0.4;
+const BGM_VOLUME = 0.55;
+
+/** Retries for the same track URL (e.g. brief nginx 502 during redeploy). */
+const TRACK_URL_RETRIES = 3;
+const RETRY_DELAY_MS = 400;
 
 const DEFAULT_TRACKS: string[] = Array.from({ length: 10 }, (_, i) =>
   `/bgm/fallout-radio-${String(i + 1).padStart(2, '0')}.mp3`,
@@ -78,6 +82,10 @@ function isPlayBlockedError(err: unknown): boolean {
   );
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function ensureAudio(): HTMLAudioElement {
   if (!audio) {
     audio = new Audio();
@@ -99,15 +107,42 @@ function haltPlayback(el: HTMLAudioElement) {
   el.load();
 }
 
-function playUrl(el: HTMLAudioElement, url: string, onEnded: () => void, onError: () => void) {
-  clearAudioHandlers(el);
-  el.src = url;
-  el.onended = onEnded;
-  el.onerror = onError;
-  void el.play().catch((err) => {
-    if (isPlayBlockedError(err)) return;
-    onError();
-  });
+function playUrl(
+  el: HTMLAudioElement,
+  url: string,
+  onEnded: () => void,
+  onFailedPermanent: () => void,
+) {
+  let retriesLeft = TRACK_URL_RETRIES;
+
+  const beginAttempt = () => {
+    if (stopped) return;
+    clearAudioHandlers(el);
+    el.src = url;
+    el.onended = onEnded;
+    el.onerror = () => {
+      void afterFailure('element-error');
+    };
+    void el.play().catch((err) => {
+      if (isPlayBlockedError(err)) return;
+      void afterFailure('play()', err);
+    });
+  };
+
+  const afterFailure = async (phase: string, err?: unknown) => {
+    if (stopped) return;
+    if (retriesLeft > 0) {
+      retriesLeft -= 1;
+      await delay(RETRY_DELAY_MS);
+      if (stopped) return;
+      beginAttempt();
+      return;
+    }
+    console.warn('[fallout-radio]', 'track failed after retries', { url, phase, err });
+    onFailedPermanent();
+  };
+
+  beginAttempt();
 }
 
 function playFallback() {
@@ -121,6 +156,18 @@ function playFallback() {
     },
     () => stopFalloutRadio(),
   );
+}
+
+function advanceAfterTrackFailure() {
+  if (stopped) return;
+  loadFailures += 1;
+  trackIndex = (trackIndex + 1) % tracks.length;
+  if (loadFailures >= tracks.length) {
+    console.warn('[fallout-radio]', 'playlist exhausted, switching to fallback');
+    useFallback = true;
+    loadFailures = 0;
+  }
+  playCurrentTrack();
 }
 
 function playCurrentTrack() {
@@ -142,16 +189,7 @@ function playCurrentTrack() {
       trackIndex = (trackIndex + 1) % tracks.length;
       playCurrentTrack();
     },
-    () => {
-      if (stopped) return;
-      loadFailures += 1;
-      trackIndex = (trackIndex + 1) % tracks.length;
-      if (loadFailures >= tracks.length) {
-        useFallback = true;
-        loadFailures = 0;
-      }
-      playCurrentTrack();
-    },
+    () => advanceAfterTrackFailure(),
   );
 }
 
@@ -166,9 +204,8 @@ export async function resumeFalloutRadioPlayback(ctx: AudioContext, _bus: GainNo
   try {
     await el.play();
   } catch (err) {
-    if (!isPlayBlockedError(err)) {
-      /* keep current track; real load/decode errors use el.onerror */
-    }
+    if (isPlayBlockedError(err)) return;
+    /* non-autoplay failures: element onerror / playUrl retries handle load issues */
   }
 }
 
