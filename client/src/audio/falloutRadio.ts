@@ -1,17 +1,20 @@
 /**
  * Fallout-style in-game radio — sequential MP3 playlist (tracks 01–10).
+ * BGM plays via HTMLAudioElement (not Web Audio MediaElementSource) so it
+ * stays audible when AudioContext is recreated on toggle/remount.
  */
 
 const PLAYLIST_URL = '/bgm/fallout-radio-playlist.json';
 const FALLBACK_TRACK = '/bgm/fallout-radio-full.mp3';
+
+/** Direct element output; tuned vs Web Audio SFX bus (~0.45). */
+const BGM_VOLUME = 0.4;
 
 const DEFAULT_TRACKS: string[] = Array.from({ length: 10 }, (_, i) =>
   `/bgm/fallout-radio-${String(i + 1).padStart(2, '0')}.mp3`,
 );
 
 let audio: HTMLAudioElement | null = null;
-let mediaSource: MediaElementAudioSourceNode | null = null;
-let connectedBus: GainNode | null = null;
 
 let tracks: string[] = [...DEFAULT_TRACKS];
 let trackIndex = 0;
@@ -75,16 +78,11 @@ function isPlayBlockedError(err: unknown): boolean {
   );
 }
 
-function ensureAudio(ctx: AudioContext, bus: GainNode): HTMLAudioElement {
+function ensureAudio(): HTMLAudioElement {
   if (!audio) {
     audio = new Audio();
     audio.preload = 'auto';
-  }
-  if (connectedBus !== bus || !mediaSource) {
-    mediaSource?.disconnect();
-    mediaSource = ctx.createMediaElementSource(audio);
-    mediaSource.connect(bus);
-    connectedBus = bus;
+    audio.volume = BGM_VOLUME;
   }
   return audio;
 }
@@ -112,27 +110,27 @@ function playUrl(el: HTMLAudioElement, url: string, onEnded: () => void, onError
   });
 }
 
-function playFallback(ctx: AudioContext, bus: GainNode) {
+function playFallback() {
   if (stopped) return;
-  const el = ensureAudio(ctx, bus);
+  const el = ensureAudio();
   playUrl(
     el,
     FALLBACK_TRACK,
     () => {
-      if (!stopped) playFallback(ctx, bus);
+      if (!stopped) playFallback();
     },
     () => stopFalloutRadio(),
   );
 }
 
-function playCurrentTrack(ctx: AudioContext, bus: GainNode) {
+function playCurrentTrack() {
   if (stopped) return;
   if (useFallback) {
-    playFallback(ctx, bus);
+    playFallback();
     return;
   }
 
-  const el = ensureAudio(ctx, bus);
+  const el = ensureAudio();
   const url = tracks[trackIndex] ?? DEFAULT_TRACKS[trackIndex % DEFAULT_TRACKS.length];
 
   playUrl(
@@ -142,7 +140,7 @@ function playCurrentTrack(ctx: AudioContext, bus: GainNode) {
       if (stopped) return;
       loadFailures = 0;
       trackIndex = (trackIndex + 1) % tracks.length;
-      playCurrentTrack(ctx, bus);
+      playCurrentTrack();
     },
     () => {
       if (stopped) return;
@@ -152,16 +150,16 @@ function playCurrentTrack(ctx: AudioContext, bus: GainNode) {
         useFallback = true;
         loadFailures = 0;
       }
-      playCurrentTrack(ctx, bus);
+      playCurrentTrack();
     },
   );
 }
 
-export async function resumeFalloutRadioPlayback(ctx: AudioContext, bus: GainNode): Promise<void> {
+export async function resumeFalloutRadioPlayback(ctx: AudioContext, _bus: GainNode): Promise<void> {
   if (stopped) return;
-  const el = ensureAudio(ctx, bus);
+  const el = ensureAudio();
   if (!el.src) {
-    playCurrentTrack(ctx, bus);
+    playCurrentTrack();
     return;
   }
   if (ctx.state === 'suspended') await ctx.resume();
@@ -174,7 +172,7 @@ export async function resumeFalloutRadioPlayback(ctx: AudioContext, bus: GainNod
   }
 }
 
-export async function startFalloutRadio(ctx: AudioContext, bus: GainNode): Promise<void> {
+export async function startFalloutRadio(ctx: AudioContext, _bus: GainNode): Promise<void> {
   stopFalloutRadio();
   stopped = false;
   useFallback = false;
@@ -186,7 +184,7 @@ export async function startFalloutRadio(ctx: AudioContext, bus: GainNode): Promi
   void loadPlaylistTracks().then((list) => {
     if (stopped) return;
     tracks = list.length ? list : [...DEFAULT_TRACKS];
-    playCurrentTrack(ctx, bus);
+    playCurrentTrack();
   });
 }
 
