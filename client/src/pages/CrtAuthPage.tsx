@@ -30,7 +30,6 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [fieldIndex, setFieldIndex] = useState(0);
-  const [looking, setLooking] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchUi = useTouchUi();
 
@@ -170,13 +169,12 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
         hiddenInputRef.current?.focus();
       }
     },
-    onLookChange: setLooking,
   });
 
   return (
     <CrtFullscreen>
       <div
-        className={`crt-fullscreen${looking ? ' crt-fullscreen--look' : ''}`}
+        className="crt-fullscreen"
         ref={containerRef}
         tabIndex={0}
         onTouchStart={onTouchStart}
@@ -218,7 +216,7 @@ export function CrtAuthPage({ mode }: CrtAuthPageProps) {
           tabIndex={-1}
         />
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
-        <CrtMobileHint looking={looking} />
+        <CrtMobileHint />
         <CrtTouchDpad
           mode="menu"
           backLabel={t('menu.backButton')}
