@@ -99,19 +99,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       {children}
       {autoplayBlocked && enabled ? (
         <div
-          className="crt-autoplay-unlock"
+          className="crt-autoplay-boot"
           role="button"
           tabIndex={0}
           aria-live="polite"
           onPointerDown={dismissAutoplayOverlay}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              dismissAutoplayOverlay();
-            }
+            e.preventDefault();
+            dismissAutoplayOverlay();
           }}
         >
-          {t('settings.autoplayGesture')}
+          <div className="crt-autoplay-boot__vignette" aria-hidden />
+          <div className="crt-autoplay-boot__scanlines" aria-hidden />
+          <p className="crt-autoplay-boot__prompt">{t('settings.autoplayGesture')}</p>
         </div>
       ) : null}
     </AudioCtx.Provider>

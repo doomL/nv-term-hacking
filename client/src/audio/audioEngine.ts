@@ -34,8 +34,8 @@ class AudioEngine {
   enabled = localStorage.getItem(STORAGE_KEY) !== 'off';
 
   constructor() {
-    setFalloutRadioPlayBlockedListener(() => {
-      this.musicOn = false;
+    setFalloutRadioPlayBlockedListener((reason) => {
+      if (reason === 'playback-blocked') this.musicOn = false;
       this.setAutoplayBlocked(true);
     });
     setFalloutRadioPlayUnblockedListener(() => {
@@ -98,7 +98,6 @@ class AudioEngine {
     if (ctx.state === 'suspended') void ctx.resume();
     this.unlocked = true;
     if (!this.enabled) return;
-    this.setAutoplayBlocked(false);
     if (!this.musicOn) this.startMusic();
     else if (this.musicBus) resumeFalloutRadioPlayback(ctx, this.musicBus);
   }
