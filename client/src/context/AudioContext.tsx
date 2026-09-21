@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAudioEngine, type SfxName } from '../audio/audioEngine';
 
 interface AudioContextValue {
@@ -7,6 +16,7 @@ interface AudioContextValue {
   toggleEnabled: () => void;
   playSfx: (name: SfxName) => void;
   unlock: () => void;
+  autoplayBlocked: boolean;
 }
 
 const AudioCtx = createContext<AudioContextValue | null>(null);
@@ -14,9 +24,11 @@ const AudioCtx = createContext<AudioContextValue | null>(null);
 export function AudioProvider({ children }: { children: ReactNode }) {
   const engine = useMemo(() => getAudioEngine(), []);
   const [enabled, setEnabledState] = useState(engine.enabled);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const { t } = useTranslation();
 
   const unlock = useCallback(() => {
-    void engine.unlock();
+    engine.unlock();
   }, [engine]);
 
   const setEnabled = useCallback(
@@ -39,6 +51,15 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    engine.setAutoplayBlockedListener(setAutoplayBlocked);
+    return () => engine.setAutoplayBlockedListener(null);
+  }, [engine]);
+
+  useEffect(() => {
+    engine.attemptAutoplayOnLoad();
+  }, [engine]);
+
+  useEffect(() => {
     const onVisibility = () => {
       if (document.hidden) engine.handleDocumentHidden();
       else engine.handleDocumentVisible();
@@ -57,6 +78,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     };
   }, [unlock]);
 
+  const dismissAutoplayOverlay = useCallback(() => {
+    unlock();
+  }, [unlock]);
+
   const value = useMemo(
     () => ({
       enabled,
@@ -64,11 +89,33 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       toggleEnabled,
       playSfx,
       unlock,
+      autoplayBlocked,
     }),
-    [enabled, setEnabled, toggleEnabled, playSfx, unlock],
+    [enabled, setEnabled, toggleEnabled, playSfx, unlock, autoplayBlocked],
   );
 
-  return <AudioCtx.Provider value={value}>{children}</AudioCtx.Provider>;
+  return (
+    <AudioCtx.Provider value={value}>
+      {children}
+      {autoplayBlocked && enabled ? (
+        <div
+          className="crt-autoplay-unlock"
+          role="button"
+          tabIndex={0}
+          aria-live="polite"
+          onPointerDown={dismissAutoplayOverlay}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              dismissAutoplayOverlay();
+            }
+          }}
+        >
+          {t('settings.autoplayGesture')}
+        </div>
+      ) : null}
+    </AudioCtx.Provider>
+  );
 }
 
 export function useAudio() {

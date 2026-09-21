@@ -1,6 +1,7 @@
 import {
   resumeFalloutRadioPlayback,
   setFalloutRadioPlayBlockedListener,
+  setFalloutRadioPlayUnblockedListener,
   startFalloutRadio,
   stopFalloutRadio,
 } from './falloutRadio';
@@ -18,6 +19,8 @@ export type SfxName =
 
 const STORAGE_KEY = 'nv-audio-enabled';
 
+export type AutoplayBlockedListener = (blocked: boolean) => void;
+
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -26,12 +29,36 @@ class AudioEngine {
   private unlocked = false;
   private musicOn = false;
   private pausedByHidden = false;
+  private autoplayBlocked = false;
+  private autoplayBlockedListener: AutoplayBlockedListener | null = null;
   enabled = localStorage.getItem(STORAGE_KEY) !== 'off';
 
   constructor() {
     setFalloutRadioPlayBlockedListener(() => {
       this.musicOn = false;
+      this.setAutoplayBlocked(true);
     });
+    setFalloutRadioPlayUnblockedListener(() => {
+      this.setAutoplayBlocked(false);
+    });
+  }
+
+  setAutoplayBlockedListener(listener: AutoplayBlockedListener | null): void {
+    this.autoplayBlockedListener = listener;
+    if (listener) listener(this.autoplayBlocked);
+  }
+
+  private setAutoplayBlocked(blocked: boolean): void {
+    if (this.autoplayBlocked === blocked) return;
+    this.autoplayBlocked = blocked;
+    this.autoplayBlockedListener?.(blocked);
+  }
+
+  /** Attempt BGM as soon as the app loads (menu mount / provider boot). */
+  attemptAutoplayOnLoad(): void {
+    if (!this.enabled) return;
+    this.ensureContext();
+    this.startMusic();
   }
 
   private ensureContext(): AudioContext | null {
@@ -57,8 +84,11 @@ class AudioEngine {
     localStorage.setItem(STORAGE_KEY, on ? 'on' : 'off');
     if (!on) {
       this.stopMusic();
+      this.setAutoplayBlocked(false);
       return;
     }
+    this.ensureContext();
+    this.startMusic();
     if (this.unlocked) void this.unlock();
   }
 
@@ -68,6 +98,7 @@ class AudioEngine {
     if (ctx.state === 'suspended') void ctx.resume();
     this.unlocked = true;
     if (!this.enabled) return;
+    this.setAutoplayBlocked(false);
     if (!this.musicOn) this.startMusic();
     else if (this.musicBus) resumeFalloutRadioPlayback(ctx, this.musicBus);
   }
@@ -88,7 +119,7 @@ class AudioEngine {
     if (this.ctx?.state === 'suspended') void this.ctx.resume();
     if (this.pausedByHidden) {
       this.pausedByHidden = false;
-      if (this.unlocked) void this.startMusic();
+      this.startMusic();
     }
   }
 

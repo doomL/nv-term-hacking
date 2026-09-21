@@ -31,3 +31,29 @@ select {
 a {
   color: inherit;
 }
+
+.crt-autoplay-unlock {
+  position: fixed;
+  inset: auto 0 12vh 0;
+  z-index: 10000;
+  margin: 0 auto;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.35rem 0.75rem;
+  color: #8df0b4;
+  font-family: inherit;
+  font-size: clamp(0.65rem, 2.8vw, 0.85rem);
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(141, 240, 180, 0.55);
+  background: rgba(2, 10, 6, 0.72);
+  border: 1px solid rgba(141, 240, 180, 0.35);
+  cursor: pointer;
+  animation: crt-autoplay-blink 1.4s step-end infinite;
+}
+
+@keyframes crt-autoplay-blink {
+  50% {
+    opacity: 0.45;
+  }
+}

@@ -75,6 +75,7 @@ const resources = {
         audio: 'Audio',
         audioOn: 'ON',
         audioOff: 'OFF',
+        autoplayGesture: '> TAP OR PRESS ANY KEY — RADIO STANDBY',
       },
       menu: {
         navHint: '↑↓ NAVIGATE',
@@ -189,6 +190,7 @@ const resources = {
         audio: 'Audio',
         audioOn: 'ATTIVO',
         audioOff: 'SPENTO',
+        autoplayGesture: '> TOCCA O PREMI UN TASTO — RADIO IN ATTESA',
       },
       menu: {
         navHint: '↑↓ NAVIGA',
