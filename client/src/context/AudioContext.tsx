@@ -49,8 +49,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onInteract = () => unlock();
-    window.addEventListener('pointerdown', onInteract, { once: true });
-    window.addEventListener('keydown', onInteract, { once: true });
+    window.addEventListener('pointerdown', onInteract);
+    window.addEventListener('keydown', onInteract);
     return () => {
       window.removeEventListener('pointerdown', onInteract);
       window.removeEventListener('keydown', onInteract);
