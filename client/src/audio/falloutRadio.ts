@@ -28,11 +28,19 @@ let stopped = true;
 let loadFailures = 0;
 let playlistPromise: Promise<string[]> | null = null;
 let resolvedTracks: string[] | null = null;
-let playBlockedListener: (() => void) | null = null;
+export type FalloutRadioAutoplayBlockReason = 'playback-blocked' | 'audible-blocked';
+
+let playBlockedListener: ((reason: FalloutRadioAutoplayBlockReason) => void) | null = null;
 let playUnblockedListener: (() => void) | null = null;
 
-/** Notifies the audio engine when autoplay policy blocks HTMLAudioElement.play(). */
-export function setFalloutRadioPlayBlockedListener(listener: (() => void) | null): void {
+function isAudiblyPlaying(el: HTMLAudioElement): boolean {
+  return !el.paused && !el.muted && el.volume > 0;
+}
+
+/** Notifies the audio engine when autoplay cannot produce audible playback yet. */
+export function setFalloutRadioPlayBlockedListener(
+  listener: ((reason: FalloutRadioAutoplayBlockReason) => void) | null,
+): void {
   playBlockedListener = listener;
 }
 
@@ -43,31 +51,58 @@ export function setFalloutRadioPlayUnblockedListener(listener: (() => void) | nu
 
 type PlayAttemptResult = 'playing' | 'blocked' | 'error';
 
+function notifyAudibleSuccess(): void {
+  playUnblockedListener?.();
+}
+
+function notifyAutoplayBlocked(reason: FalloutRadioAutoplayBlockReason): void {
+  playBlockedListener?.(reason);
+}
+
+async function waitForPlaying(el: HTMLAudioElement): Promise<void> {
+  if (!el.paused && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return;
+  await new Promise<void>((resolve) => {
+    el.addEventListener('playing', () => resolve(), { once: true });
+  });
+}
+
+/** After muted autoplay succeeds, try unmute; Chrome often keeps audio silent without a gesture. */
+async function finishMutedAutoplayAttempt(el: HTMLAudioElement): Promise<PlayAttemptResult> {
+  await waitForPlaying(el);
+  el.muted = false;
+  if (isAudiblyPlaying(el)) {
+    notifyAudibleSuccess();
+    return 'playing';
+  }
+  notifyAutoplayBlocked('audible-blocked');
+  return 'blocked';
+}
+
 async function attemptElementPlay(el: HTMLAudioElement): Promise<PlayAttemptResult> {
   try {
     await el.play();
-    playUnblockedListener?.();
-    return 'playing';
+    if (isAudiblyPlaying(el)) {
+      notifyAudibleSuccess();
+      return 'playing';
+    }
+    if (!el.paused) {
+      notifyAutoplayBlocked('audible-blocked');
+      return 'blocked';
+    }
   } catch (err) {
     if (!isPlayBlockedError(err)) return 'error';
   }
 
-  const prevMuted = el.muted;
   el.muted = true;
   try {
     await el.play();
-    const unmute = () => {
-      el.muted = prevMuted;
-    };
-    if (!el.paused && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) unmute();
-    else el.addEventListener('playing', unmute, { once: true });
-    playUnblockedListener?.();
-    return 'playing';
   } catch {
-    el.muted = prevMuted;
-    playBlockedListener?.();
+    el.muted = false;
+    notifyAutoplayBlocked('playback-blocked');
     return 'blocked';
   }
+
+  return finishMutedAutoplayAttempt(el);
 }
 
 function normalizeBgmPath(path: string): string {
@@ -168,6 +203,7 @@ function playUrl(
   const beginAttempt = () => {
     if (stopped) return;
     clearAudioHandlers(el);
+    el.muted = false;
     el.src = url;
     el.onended = onEnded;
     el.onerror = () => {
@@ -247,6 +283,8 @@ function playCurrentTrack() {
 export function resumeFalloutRadioPlayback(ctx: AudioContext, _bus: GainNode): void {
   if (stopped) return;
   const el = ensureAudio();
+  el.muted = false;
+  if (el.volume <= 0) el.volume = BGM_VOLUME;
   if (!el.src) {
     playCurrentTrack();
     return;

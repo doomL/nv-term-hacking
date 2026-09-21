@@ -32,28 +32,63 @@ a {
   color: inherit;
 }
 
-.crt-autoplay-unlock {
+.crt-autoplay-boot {
   position: fixed;
-  inset: auto 0 12vh 0;
-  z-index: 10000;
-  margin: 0 auto;
-  width: max-content;
-  max-width: calc(100vw - 2rem);
-  padding: 0.35rem 0.75rem;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 1.5rem;
   color: #8df0b4;
   font-family: inherit;
-  font-size: clamp(0.65rem, 2.8vw, 0.85rem);
-  letter-spacing: 0.06em;
-  text-align: center;
-  text-shadow: 0 0 8px rgba(141, 240, 180, 0.55);
-  background: rgba(2, 10, 6, 0.72);
-  border: 1px solid rgba(141, 240, 180, 0.35);
+  background: #020a06;
   cursor: pointer;
-  animation: crt-autoplay-blink 1.4s step-end infinite;
+  isolation: isolate;
+  outline: none;
 }
 
-@keyframes crt-autoplay-blink {
+.crt-autoplay-boot__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, rgba(141, 240, 180, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+.crt-autoplay-boot__scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.28) 0,
+    rgba(0, 0, 0, 0.28) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.crt-autoplay-boot__prompt {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: min(42rem, 92vw);
+  font-size: clamp(0.75rem, 3.6vw, 1.05rem);
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-align: center;
+  text-shadow:
+    0 0 12px rgba(141, 240, 180, 0.75),
+    0 0 28px rgba(80, 200, 120, 0.35);
+  animation: crt-autoplay-boot-blink 1.2s step-end infinite;
+}
+
+@keyframes crt-autoplay-boot-blink {
   50% {
-    opacity: 0.45;
+    opacity: 0.42;
   }
 }
