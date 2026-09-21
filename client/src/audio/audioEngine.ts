@@ -20,8 +20,6 @@ class AudioEngine {
   private sfxBus: GainNode | null = null;
   private unlocked = false;
   private musicOn = false;
-  /** True while an active hacking session should have BGM (TerminalGame, status playing). */
-  private gameplayMusicWanted = false;
   private pausedByHidden = false;
   enabled = localStorage.getItem(STORAGE_KEY) !== 'off';
 
@@ -58,19 +56,9 @@ class AudioEngine {
     if (!ctx) return;
     if (ctx.state === 'suspended') await ctx.resume();
     this.unlocked = true;
-    if (!this.enabled || !this.gameplayMusicWanted) return;
+    if (!this.enabled) return;
     if (!this.musicOn) await this.startMusic();
     else if (this.musicBus) await resumeFalloutRadioPlayback(ctx, this.musicBus);
-  }
-
-  /** Start/stop in-game BGM. Does not affect SFX or the global audio enabled flag. */
-  setGameplayMusic(want: boolean) {
-    this.gameplayMusicWanted = want;
-    if (!want) {
-      this.stopMusic();
-      return;
-    }
-    if (this.enabled && this.unlocked) void this.startMusic();
   }
 
   handleDocumentHidden() {
@@ -87,11 +75,9 @@ class AudioEngine {
       return;
     }
     if (this.ctx?.state === 'suspended') void this.ctx.resume();
-    if (this.pausedByHidden && this.gameplayMusicWanted) {
+    if (this.pausedByHidden) {
       this.pausedByHidden = false;
-      void this.startMusic();
-    } else {
-      this.pausedByHidden = false;
+      if (this.unlocked) void this.startMusic();
     }
   }
 

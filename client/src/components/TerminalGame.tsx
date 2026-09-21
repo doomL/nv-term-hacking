@@ -48,7 +48,7 @@ export function TerminalGame({
   readOnly,
 }: TerminalGameProps) {
   const { t } = useTranslation();
-  const { playSfx, unlock, setGameplayMusic } = useAudio();
+  const { playSfx, unlock } = useAudio();
   const [localState, setLocalState] = useState(() =>
     createGame({ difficulty, language: normalizeGameLanguage(language) }),
   );
@@ -76,12 +76,6 @@ export function TerminalGame({
   useEffect(() => {
     setCursorIndex((i) => Math.min(i, gridSize - 1));
   }, [gridSize]);
-
-  useEffect(() => {
-    const playing = gameState.status === 'playing';
-    setGameplayMusic(playing);
-    return () => setGameplayMusic(false);
-  }, [gameState.status, setGameplayMusic]);
 
   useEffect(() => {
     if (!externalState && gameState.status !== 'playing') {

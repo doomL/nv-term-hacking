@@ -1,5 +1,6 @@
 /**
- * Fallout-style in-game radio — sequential MP3 playlist (tracks 01–10).
+ * Fallout-style ambient radio — sequential MP3 playlist (tracks 01–10).
+ * Picks a random starting track each cold start; then advances in order with wrap.
  * BGM plays via HTMLAudioElement (not Web Audio MediaElementSource) so it
  * stays audible when AudioContext is recreated on toggle/remount.
  */
@@ -213,7 +214,6 @@ export async function startFalloutRadio(ctx: AudioContext, _bus: GainNode): Prom
   stopFalloutRadio();
   stopped = false;
   useFallback = false;
-  trackIndex = 0;
   loadFailures = 0;
 
   if (ctx.state === 'suspended') await ctx.resume();
@@ -221,6 +221,7 @@ export async function startFalloutRadio(ctx: AudioContext, _bus: GainNode): Prom
   void loadPlaylistTracks().then((list) => {
     if (stopped) return;
     tracks = list.length ? list : [...DEFAULT_TRACKS];
+    trackIndex = Math.floor(Math.random() * tracks.length);
     playCurrentTrack();
   });
 }
