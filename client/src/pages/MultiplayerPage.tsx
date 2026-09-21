@@ -59,7 +59,6 @@ export function MultiplayerPage() {
   const [saved, setSaved] = useState(false);
   const [menuIndex, setMenuIndex] = useState(0);
   const [lobbyStats, setLobbyStats] = useState({ onlinePlayers: 0, openRooms: 0 });
-  const [menuLooking, setMenuLooking] = useState(false);
   const touchUi = useTouchUi();
 
   const username = user?.username ?? guestName;
@@ -226,7 +225,6 @@ export function MultiplayerPage() {
     onUp: () => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.max(0, i - 1)); },
     onDown: () => { unlock(); playSfx('navigate'); setMenuIndex((i) => Math.min(lobbyItems.length - 1, i + 1)); },
     onTap: () => activateLobby(),
-    onLookChange: setMenuLooking,
   });
 
   const waitingTap = useSwipeNavigation({
@@ -237,7 +235,6 @@ export function MultiplayerPage() {
         setReady();
       }
     },
-    onLookChange: setMenuLooking,
   });
 
   const finishedTap = useSwipeNavigation({
@@ -247,7 +244,6 @@ export function MultiplayerPage() {
       if (user && room?.winnerId === mySocketId && !saved) handleSaveScore();
       else leaveRoom();
     },
-    onLookChange: setMenuLooking,
   });
 
   useEffect(() => {
@@ -267,7 +263,7 @@ export function MultiplayerPage() {
     return (
       <CrtFullscreen>
         <div
-          className={`crt-fullscreen${menuLooking ? ' crt-fullscreen--look' : ''}`}
+          className="crt-fullscreen"
           ref={containerRef}
           tabIndex={0}
           onTouchStart={lobbySwipe.onTouchStart}
@@ -276,7 +272,7 @@ export function MultiplayerPage() {
           onTouchCancel={lobbySwipe.onTouchCancel}
         >
           <CrtTerminal getScreenData={getLobbyScreen} brightness={1.1} opacity={1} />
-          <CrtMobileHint looking={menuLooking} />
+          <CrtMobileHint />
           <CrtTouchDpad
             mode="menu"
             backLabel={t('menu.backButton')}
@@ -294,7 +290,7 @@ export function MultiplayerPage() {
     return (
       <CrtFullscreen>
         <div
-          className={`crt-fullscreen${menuLooking ? ' crt-fullscreen--look' : ''}`}
+          className="crt-fullscreen"
           tabIndex={0}
           onTouchStart={waitingTap.onTouchStart}
           onTouchMove={waitingTap.onTouchMove}
@@ -306,7 +302,7 @@ export function MultiplayerPage() {
           }}
         >
           <CrtTerminal getScreenData={getWaitingScreen} brightness={1.1} opacity={1} />
-          <CrtMobileHint looking={menuLooking} />
+          <CrtMobileHint />
           <CrtTouchDpad
             mode="menu"
             backLabel={t('menu.backButton')}
@@ -337,7 +333,7 @@ export function MultiplayerPage() {
     return (
       <CrtFullscreen>
         <div
-          className={`crt-fullscreen${menuLooking ? ' crt-fullscreen--look' : ''}`}
+          className="crt-fullscreen"
           tabIndex={0}
           onTouchStart={finishedTap.onTouchStart}
           onTouchMove={finishedTap.onTouchMove}
@@ -354,7 +350,7 @@ export function MultiplayerPage() {
           }}
         >
           <CrtTerminal getScreenData={getScreen} brightness={1.1} opacity={1} />
-          <CrtMobileHint looking={menuLooking} />
+          <CrtMobileHint />
           <CrtTouchDpad
             mode="menu"
             backLabel={t('menu.backButton')}

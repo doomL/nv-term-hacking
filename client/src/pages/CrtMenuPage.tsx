@@ -24,7 +24,6 @@ export function CrtMenuPage() {
   const { difficulty, setDifficulty, language, setLanguage } = useSettings();
   const { enabled: audioEnabled, toggleEnabled, playSfx, unlock } = useAudio();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [looking, setLooking] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchUi = useTouchUi();
 
@@ -169,13 +168,12 @@ export function CrtMenuPage() {
       unlock();
       activate(items[selectedIndex]?.id ?? '');
     },
-    onLookChange: setLooking,
   });
 
   return (
     <CrtFullscreen>
       <div
-        className={`crt-fullscreen${looking ? ' crt-fullscreen--look' : ''}`}
+        className="crt-fullscreen"
         ref={containerRef}
         tabIndex={0}
         onTouchStart={onTouchStart}
@@ -184,7 +182,7 @@ export function CrtMenuPage() {
         onTouchCancel={onTouchCancel}
       >
         <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
-        <CrtMobileHint looking={looking} />
+        <CrtMobileHint />
       </div>
     </CrtFullscreen>
   );

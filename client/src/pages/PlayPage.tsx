@@ -33,7 +33,6 @@ export function PlayPage() {
   } | null>(null);
   const [saved, setSaved] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [endLooking, setEndLooking] = useState(false);
   const touchUi = useTouchUi();
 
   const handleGameEnd = useCallback(
@@ -99,7 +98,6 @@ export function PlayPage() {
       else if (action === 'new') handleNewGame();
       else if (action === 'menu') navigate('/');
     },
-    onLookChange: setEndLooking,
   });
 
   if (!playing && endResult) {
@@ -141,7 +139,7 @@ export function PlayPage() {
     return (
       <CrtFullscreen>
         <div
-          className={`crt-fullscreen${endLooking ? ' crt-fullscreen--look' : ''}`}
+          className="crt-fullscreen"
           tabIndex={0}
           onTouchStart={endScreenSwipe.onTouchStart}
           onTouchMove={endScreenSwipe.onTouchMove}
@@ -166,7 +164,7 @@ export function PlayPage() {
           }}
         >
           <CrtTerminal getScreenData={getScreenData} brightness={1.1} opacity={1} />
-          <CrtMobileHint looking={endLooking} />
+          <CrtMobileHint />
           <CrtTouchDpad
             mode="menu"
             backLabel={t('menu.backButton')}
