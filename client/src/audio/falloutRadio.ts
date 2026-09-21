@@ -29,10 +29,45 @@ let loadFailures = 0;
 let playlistPromise: Promise<string[]> | null = null;
 let resolvedTracks: string[] | null = null;
 let playBlockedListener: (() => void) | null = null;
+let playUnblockedListener: (() => void) | null = null;
 
 /** Notifies the audio engine when autoplay policy blocks HTMLAudioElement.play(). */
 export function setFalloutRadioPlayBlockedListener(listener: (() => void) | null): void {
   playBlockedListener = listener;
+}
+
+/** Notifies when HTMLAudioElement playback actually starts (incl. muted-autoplay unlock). */
+export function setFalloutRadioPlayUnblockedListener(listener: (() => void) | null): void {
+  playUnblockedListener = listener;
+}
+
+type PlayAttemptResult = 'playing' | 'blocked' | 'error';
+
+async function attemptElementPlay(el: HTMLAudioElement): Promise<PlayAttemptResult> {
+  try {
+    await el.play();
+    playUnblockedListener?.();
+    return 'playing';
+  } catch (err) {
+    if (!isPlayBlockedError(err)) return 'error';
+  }
+
+  const prevMuted = el.muted;
+  el.muted = true;
+  try {
+    await el.play();
+    const unmute = () => {
+      el.muted = prevMuted;
+    };
+    if (!el.paused && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) unmute();
+    else el.addEventListener('playing', unmute, { once: true });
+    playUnblockedListener?.();
+    return 'playing';
+  } catch {
+    el.muted = prevMuted;
+    playBlockedListener?.();
+    return 'blocked';
+  }
 }
 
 function normalizeBgmPath(path: string): string {
@@ -138,12 +173,10 @@ function playUrl(
     el.onerror = () => {
       void afterFailure('element-error');
     };
-    void el.play().catch((err) => {
-      if (isPlayBlockedError(err)) {
-        playBlockedListener?.();
-        return;
-      }
-      void afterFailure('play()', err);
+    void attemptElementPlay(el).then((result) => {
+      if (stopped) return;
+      if (result === 'blocked') return;
+      if (result === 'error') void afterFailure('play()');
     });
   };
 
@@ -219,8 +252,8 @@ export function resumeFalloutRadioPlayback(ctx: AudioContext, _bus: GainNode): v
     return;
   }
   if (ctx.state === 'suspended') void ctx.resume();
-  void el.play().catch((err) => {
-    if (isPlayBlockedError(err)) playBlockedListener?.();
+  void attemptElementPlay(el).then((result) => {
+    if (result === 'blocked') return;
   });
 }
 

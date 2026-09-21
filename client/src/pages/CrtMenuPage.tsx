@@ -154,18 +154,6 @@ export function CrtMenuPage() {
     containerRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return undefined;
-    const onFirstGesture = () => unlock();
-    root.addEventListener('pointerdown', onFirstGesture);
-    root.addEventListener('keydown', onFirstGesture);
-    return () => {
-      root.removeEventListener('pointerdown', onFirstGesture);
-      root.removeEventListener('keydown', onFirstGesture);
-    };
-  }, [unlock]);
-
   const { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useSwipeNavigation({
     onUp: () => {
       unlock();
@@ -190,7 +178,6 @@ export function CrtMenuPage() {
         className={`crt-fullscreen${looking ? ' crt-fullscreen--look' : ''}`}
         ref={containerRef}
         tabIndex={0}
-        onPointerDown={() => unlock()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
