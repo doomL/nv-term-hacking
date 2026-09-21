@@ -1,4 +1,9 @@
-import { resumeFalloutRadioPlayback, startFalloutRadio, stopFalloutRadio } from './falloutRadio';
+import {
+  resumeFalloutRadioPlayback,
+  setFalloutRadioPlayBlockedListener,
+  startFalloutRadio,
+  stopFalloutRadio,
+} from './falloutRadio';
 import * as sfx from './sfx';
 
 export type SfxName =
@@ -22,6 +27,12 @@ class AudioEngine {
   private musicOn = false;
   private pausedByHidden = false;
   enabled = localStorage.getItem(STORAGE_KEY) !== 'off';
+
+  constructor() {
+    setFalloutRadioPlayBlockedListener(() => {
+      this.musicOn = false;
+    });
+  }
 
   private ensureContext(): AudioContext | null {
     if (!this.enabled) return null;
@@ -51,14 +62,14 @@ class AudioEngine {
     if (this.unlocked) void this.unlock();
   }
 
-  async unlock(): Promise<void> {
+  unlock(): void {
     const ctx = this.ensureContext();
     if (!ctx) return;
-    if (ctx.state === 'suspended') await ctx.resume();
+    if (ctx.state === 'suspended') void ctx.resume();
     this.unlocked = true;
     if (!this.enabled) return;
-    if (!this.musicOn) await this.startMusic();
-    else if (this.musicBus) await resumeFalloutRadioPlayback(ctx, this.musicBus);
+    if (!this.musicOn) this.startMusic();
+    else if (this.musicBus) resumeFalloutRadioPlayback(ctx, this.musicBus);
   }
 
   handleDocumentHidden() {
@@ -81,12 +92,12 @@ class AudioEngine {
     }
   }
 
-  async startMusic(): Promise<void> {
+  startMusic(): void {
     const ctx = this.ensureContext();
     if (!ctx || !this.musicBus || this.musicOn || !this.enabled) return;
-    if (ctx.state === 'suspended') await ctx.resume();
+    if (ctx.state === 'suspended') void ctx.resume();
     this.musicOn = true;
-    await startFalloutRadio(ctx, this.musicBus);
+    startFalloutRadio(ctx, this.musicBus);
   }
 
   stopMusic() {

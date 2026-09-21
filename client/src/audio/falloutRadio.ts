@@ -27,6 +27,13 @@ let useFallback = false;
 let stopped = true;
 let loadFailures = 0;
 let playlistPromise: Promise<string[]> | null = null;
+let resolvedTracks: string[] | null = null;
+let playBlockedListener: (() => void) | null = null;
+
+/** Notifies the audio engine when autoplay policy blocks HTMLAudioElement.play(). */
+export function setFalloutRadioPlayBlockedListener(listener: (() => void) | null): void {
+  playBlockedListener = listener;
+}
 
 function normalizeBgmPath(path: string): string {
   const trimmed = path.trim();
@@ -70,11 +77,18 @@ async function loadPlaylistTracks(): Promise<string[]> {
       } catch {
         /* hardcoded default */
       }
-      return [...DEFAULT_TRACKS];
+      const list = [...DEFAULT_TRACKS];
+      resolvedTracks = list;
+      return list;
     })();
   }
-  return playlistPromise;
+  return playlistPromise.then((list) => {
+    resolvedTracks = list;
+    return list;
+  });
 }
+
+void loadPlaylistTracks();
 
 function isPlayBlockedError(err: unknown): boolean {
   return (
@@ -125,7 +139,10 @@ function playUrl(
       void afterFailure('element-error');
     };
     void el.play().catch((err) => {
-      if (isPlayBlockedError(err)) return;
+      if (isPlayBlockedError(err)) {
+        playBlockedListener?.();
+        return;
+      }
       void afterFailure('play()', err);
     });
   };
@@ -194,36 +211,42 @@ function playCurrentTrack() {
   );
 }
 
-export async function resumeFalloutRadioPlayback(ctx: AudioContext, _bus: GainNode): Promise<void> {
+export function resumeFalloutRadioPlayback(ctx: AudioContext, _bus: GainNode): void {
   if (stopped) return;
   const el = ensureAudio();
   if (!el.src) {
     playCurrentTrack();
     return;
   }
-  if (ctx.state === 'suspended') await ctx.resume();
-  try {
-    await el.play();
-  } catch (err) {
-    if (isPlayBlockedError(err)) return;
-    /* non-autoplay failures: element onerror / playUrl retries handle load issues */
-  }
+  if (ctx.state === 'suspended') void ctx.resume();
+  void el.play().catch((err) => {
+    if (isPlayBlockedError(err)) playBlockedListener?.();
+  });
 }
 
-export async function startFalloutRadio(ctx: AudioContext, _bus: GainNode): Promise<void> {
-  stopFalloutRadio();
-  stopped = false;
-  useFallback = false;
-  loadFailures = 0;
-
-  if (ctx.state === 'suspended') await ctx.resume();
-
+function beginColdStartPlayback(): void {
+  if (resolvedTracks?.length) {
+    tracks = resolvedTracks;
+    trackIndex = Math.floor(Math.random() * tracks.length);
+    playCurrentTrack();
+    return;
+  }
   void loadPlaylistTracks().then((list) => {
     if (stopped) return;
     tracks = list.length ? list : [...DEFAULT_TRACKS];
     trackIndex = Math.floor(Math.random() * tracks.length);
     playCurrentTrack();
   });
+}
+
+export function startFalloutRadio(ctx: AudioContext, _bus: GainNode): void {
+  stopFalloutRadio();
+  stopped = false;
+  useFallback = false;
+  loadFailures = 0;
+
+  if (ctx.state === 'suspended') void ctx.resume();
+  beginColdStartPlayback();
 }
 
 export function stopFalloutRadio() {
